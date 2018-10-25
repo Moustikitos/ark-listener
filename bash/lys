@@ -4,7 +4,7 @@
 """
 Usage:
 	lys peer-configure -l <listener> -w <webhook>
-	lys deploy-listener <event> <target> (<regex> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
+	lys deploy-listener <event> <module> (<regex> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
 	lys destroy-listener [<name>]
 	lys start-server
 	lys stop-server
@@ -29,8 +29,8 @@ import sys
 import docopt
 
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
-import lysstener
-from lystener import rest, loadJson, dumpJson
+import lystener
+from lystener import rest, loadJson, dumpJson, logMsg
 
 
 def start_server(args={}, **options):
@@ -57,16 +57,17 @@ fi
 
 
 def deploy_listener(args={}, **options):
-	json_name = "%s.json" % args["<module>"]
+	module = args["<module>"]
+	json_name = "%s.json" % module
 	webhook_peer = options.get("webhook", "%(protocol)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
-	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) + module
+	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) +"/"+ module
 
 	# compute listener condition
 	if "<regex>" in args:
 		condition = {
 			"key": "vendorField",
-			"condition": "regex",
-			"value": regex
+			"condition": "regexp",
+			"value": args["<regex>"]
 		}
 	elif len(options):
 		condition = {
@@ -78,14 +79,14 @@ def deploy_listener(args={}, **options):
 	# create a webhook if no one is set
 	webhook = loadJson(json_name)
 	if not webhook.get("token", False):
-		webhook = dposlib.rest.POST.api.webhooks(
+		webhook = rest.POST.api.webhooks(
 			event=args["<event>"],
 			peer=webhook_peer,
 			target=listener_peer,
 			conditions=[condition]
 		).get("data", False)
 		if webhook:
-			weebhook["peer"] = webhook_peer
+			webhook["peer"] = webhook_peer
 			dumpJson(webhook, json_name)
 			logMsg("%s webhook set" % module)
 		else:
