@@ -1,0 +1,134 @@
+#! /usr/bin/env python
+# -*- encoding:utf-8 -*-
+
+"""
+Usage:
+	lys peer-configure -l <listener> -w <webhook>
+	lys deploy-listener <event> <target> (<regex> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
+	lys destroy-listener [<name>]
+	lys start-server
+	lys stop-server
+
+Options:
+-c --condition=<condition> : 
+-f --field=<field>         : 
+-l --listener=<listener>   :
+-v --value=<value>         : 
+-w --webhook=<webhook>     : 
+
+Subcommands:
+	peer-configure   :
+	deploy-listener  : 
+	destroy-listener : 
+	start-server     : start/restart lystener server
+	stop-server      : stop lystener server
+"""
+
+import os
+import sys
+import docopt
+
+sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
+import lysstener
+from lystener import rest, loadJson, dumpJson
+
+
+def start_server(args={}, **options):
+	os.system("""
+if [ "$(pm2 id lystener-server) " = "[] " ]; then
+	cd %(abspath)s
+	pm2 start app.json
+else
+	pm2 restart lystener-server
+fi
+""" % {"abspath": os.path.abspath(os.path.dirname(__file__))}
+)
+
+
+def stop_server(args={}, **options):
+	os.chdir(os.path.abspath(os.path.dirname(__file__)))
+	os.system("""
+if [ "$(pm2 id lystener-server) " != "[] " ]; then
+	cd %(abspath)s
+	pm2 stop lystener-server
+fi
+""" % {"abspath": os.path.abspath(os.path.dirname(__file__))}
+)
+
+
+def deploy_listener(args={}, **options):
+	json_name = "%s.json" % args["<module>"]
+	webhook_peer = options.get("webhook", "%(protocol)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
+	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) + module
+
+	# compute listener condition
+	if "<regex>" in args:
+		condition = {
+			"key": "vendorField",
+			"condition": "regex",
+			"value": regex
+		}
+	elif len(options):
+		condition = {
+			"key": options["field"],
+			"condition": options["condition"],
+			"value": options["value"]
+		}
+
+	# create a webhook if no one is set
+	webhook = loadJson(json_name)
+	if not webhook.get("token", False):
+		webhook = dposlib.rest.POST.api.webhooks(
+			event=args["<event>"],
+			peer=webhook_peer,
+			target=listener_peer,
+			conditions=[condition]
+		).get("data", False)
+		if webhook:
+			weebhook["peer"] = webhook_peer
+			dumpJson(webhook, json_name)
+			logMsg("%s webhook set" % module)
+		else:
+			logMsg("%s webhook not set" % module)
+	else:
+		logMsg("webhook already set for %s" % module)	
+
+
+def destroy_listener(args={}, **options):
+	json_name = "%s.json" % args["<module>"]
+	webhook = loadJson(json_name)
+	rest.DELETE.api.webhooks(webhook["id"], peer=webhook["peer"])
+	os.remove(os.path.join(lystener.JSON, json-name))
+
+
+if __name__ == "__main__":
+
+	FILTER = {
+		"--condition": lambda value: str(value),
+		"--field":     lambda value: str(value),
+		"--listener":  lambda value: str(value),
+		"--value":     lambda value: str(value),
+		"--webhook":   lambda value: str(value),
+	}
+
+	def getAction(args):
+		for action in [k for k in args if k[0] not in ["-", "<"]]:
+			if args[action] == True:
+				return action
+		return False
+
+	def getOptions(args):
+		options = {}
+		for option,value in [(k,v) for k,v in args.items() if k.startswith("--") and v != None]:
+			options[option[2:].replace("-", "_")] = FILTER[option](value)
+		return dict((k,v) for k,v in options.items() if v != None)
+
+	args = docopt.docopt(__doc__, argv=sys.argv[1:])
+
+	action = getAction(args)
+	options = getOptions(args)
+
+	if action:
+		func = getattr(sys.modules[__name__], action.replace("-", "_"))
+		if callable(func):
+			func(args, **options)

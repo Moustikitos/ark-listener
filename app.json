@@ -1,0 +1,10 @@
+{
+	"apps": [{
+		"name": "lystener-server",
+		"script": "lys.py",
+		"instances": 1,
+		"exec_mode": "fork",
+		"exec_interpreter": "python",
+		"log_date_format": "YYYY-MM-DD HH:mm Z"
+	}]
+}
