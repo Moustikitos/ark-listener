@@ -5,7 +5,7 @@
 Usage:
 	lys peer-configure -l <listener> -w <webhook>
 	lys deploy-listener <event> <module> (<regex> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
-	lys destroy-listener [<name>]
+	lys destroy-listener [<module>]
 	lys start-server
 	lys stop-server
 
@@ -98,8 +98,9 @@ def deploy_listener(args={}, **options):
 def destroy_listener(args={}, **options):
 	json_name = "%s.json" % args["<module>"]
 	webhook = loadJson(json_name)
+	print(webhook)
 	rest.DELETE.api.webhooks(webhook["id"], peer=webhook["peer"])
-	os.remove(os.path.join(lystener.JSON, json-name))
+	os.remove(os.path.join(lystener.JSON, json_name))
 
 
 if __name__ == "__main__":

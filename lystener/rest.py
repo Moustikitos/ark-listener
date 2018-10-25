@@ -60,7 +60,7 @@ class EndPoint(object):
 			)
 			data = EndPoint.manageResponse(req)
 		except Exception as error:
-			data = {"success": False, "error": error, "url": req.url}
+			data = {"success": False, "error": error}
 		return data
 
 	@staticmethod
@@ -76,7 +76,7 @@ class EndPoint(object):
 			)
 			data = EndPoint.manageResponse(req)
 		except Exception as error:
-			data = {"success": False, "error": error, "url": req.url}
+			data = {"success": False, "error": error}
 		return data
 
 	@staticmethod
@@ -92,7 +92,7 @@ class EndPoint(object):
 			)
 			data = EndPoint.manageResponse(req)
 		except Exception as error:
-			data = {"success": False, "error": error, "url": req.url}
+			data = {"success": False, "error": error}
 		return data
 
 	@staticmethod
@@ -108,7 +108,7 @@ class EndPoint(object):
 			)
 			data = EndPoint.manageResponse(req)
 		except Exception as error:
-			data = {"success": False, "error": error, "url": req.url}
+			data = {"success": False, "error": error}
 		return data
 
 	def __init__(self, elem=None, parent=None, method=None):
