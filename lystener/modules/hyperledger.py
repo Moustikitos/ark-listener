@@ -1,14 +1,14 @@
 # -*- encoding:utf-8 -*-
 
 import json
-from lystener import rest, logMsg
+import requests
+import sys
 
 
 def executeInsurancePolicy(data):
 
-	params = data["vendorField"].split(':')
-	endpoint = params[2]
-	assetId = params[3]
+	head, namespace, endpoint, assetId = data["vendorField"].split(':')
+
 	body = {
 		"policy": "resource:io.arklabs.InsurancePolicy#" + assetId,
 		"amountPaid": data["amount"],
@@ -16,10 +16,24 @@ def executeInsurancePolicy(data):
 		"$class": "io.arklabs." + endpoint
 	}
 
-	# POST body to http://159.89.146.143:3000/api/endpoint using rest:
-	result = rest.POST.api(endpoint, peer="http://159.89.146.143:3000", **body)
+	headers = {
+          "Content-Type": "application/json",
+          "os": "linux3.2.0-4-amd64",
+          "version": "0.3.0",
+          "port": "3000"
+	}
+
+	# POST body to http://159.89.146.143:3000/api/endpoint using requests
+	result = requests.post(
+		"http://159.89.146.143:3000/api/"+endpoint,
+		data=json.dumps(body),
+		headers=headers,
+		verify=True
+	)
+
 	try: msg = json.dumps(result.json(), indent=2)
 	except: msg = result
-	logMsg('Transaction sent to hyperledger :\n%s' % msg)
+	sys.stdout.write('>>> Transaction sent to hyperledger...\n')
+	sys.stdout.flush()
 	
 	return msg
