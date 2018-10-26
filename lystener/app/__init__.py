@@ -10,7 +10,6 @@ import lystener
 from importlib import import_module
 from lystener import logMsg, loadJson
 
-# CURRENT_HASH = set()
 
 # create the application instance 
 app = flask.Flask(__name__) 
@@ -35,19 +34,15 @@ def execute(module, name):
 	if flask.request.method == "POST":
 		raw = flask.request.data
 		data = json.loads(raw).get("data", False)
-		raw = re.sub(r"[\s]*", "", raw) # strip all whitespaces
 
 		# should add something to set a hook is happening
 		# and prevent from execution of the same event with same data...
 		# maybe hash the raw data and save it somewhere in a database
 		# could be some history of parsed webhooks
 
+		# raw = re.sub(r"[\s]*", "", raw) # strip all whitespaces
 		# h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-		# if h in CURRENT_HASH:
-		# 	logMsg("already being processed")
-		# 	return json.dumps({"success": False, "message": "already being processed"})
-		# else:
-		# 	CURRENT_HASH.add(h)
+		# save hash in sqlite database...
 
 		path_module = "%s.%s" % (module, name)
 
@@ -80,7 +75,6 @@ def execute(module, name):
 			logMsg(msg)
 			return json.dumps({"success": False, "message": msg})
 
-		# CURRENT_HASH.remove(h)
 		return json.dumps({"success": True, "message": response})
 
 	return flask.render_template(
