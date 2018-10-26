@@ -26,10 +26,11 @@ import re
 import json
 import requests
 
+# by default, listener peer is the server.
 LISTENER_PEER = {
 	"protocol": "http",
 	"ip": "127.0.0.1",
-	"port": 5000
+	"port": 5001
 }
 
 WEBHOOK_PEER = {
@@ -48,6 +49,13 @@ TIMEOUT = 5
 class EndPoint(object):
 
 	@staticmethod
+	def _manageResponse(req):
+		try:
+			return req.json()
+		except:
+			return req.text
+
+	@staticmethod
 	def _GET(*args, **kwargs):
 		peer = kwargs.pop('peer', "%(protocol)s://%(ip)s:%(port)s" % LISTENER_PEER)
 		try:
@@ -58,7 +66,7 @@ class EndPoint(object):
 				timeout=TIMEOUT,
 				verify=True
 			)
-			data = EndPoint.manageResponse(req)
+			data = EndPoint._manageResponse(req)
 		except Exception as error:
 			data = {"success": False, "error": error}
 		return data
@@ -74,7 +82,7 @@ class EndPoint(object):
 				timeout=TIMEOUT,
 				verify=True
 			)
-			data = EndPoint.manageResponse(req)
+			data = EndPoint._manageResponse(req)
 		except Exception as error:
 			data = {"success": False, "error": error}
 		return data
@@ -90,7 +98,7 @@ class EndPoint(object):
 				timeout=TIMEOUT,
 				verify=True
 			)
-			data = EndPoint.manageResponse(req)
+			data = EndPoint._manageResponse(req)
 		except Exception as error:
 			data = {"success": False, "error": error}
 		return data
@@ -106,21 +114,22 @@ class EndPoint(object):
 				timeout=TIMEOUT,
 				verify=True
 			)
-			data = EndPoint.manageResponse(req)
+			data = EndPoint._manageResponse(req)
 		except Exception as error:
 			data = {"success": False, "error": error}
 		return data
 
 	def __init__(self, elem=None, parent=None, method=None):
 		if method not in [EndPoint._GET, EndPoint._POST, EndPoint._PUT, EndPoint._DELETE]:
-			raise Exception("REST method not implemented")
+			raise Exception("REST method %s not implemented" % method)
 		self.elem = elem
 		self.parent = parent
 		self.method = method
 
 	def __getattr__(self, attr):
+		startswith_ = re.compile(r"^_[0-9A-Fa-f].*")
 		if attr not in ["elem", "parent", "method", "chain"]:
-			if re.match("^_[0-9A-Fa-f].*", attr):
+			if startswith_.match(attr):
 				attr = attr[1:]
 			return EndPoint(attr, self, self.method)
 		else:
@@ -131,13 +140,6 @@ class EndPoint(object):
 
 	def chain(self):
 		return (self.parent.chain() + [self.elem]) if self.parent!=None else [""]
-
-	@staticmethod
-	def manageResponse(req):
-		try:
-			return req.json()
-		except:
-			return req.text
 
 
 GET = EndPoint(method=EndPoint._GET)

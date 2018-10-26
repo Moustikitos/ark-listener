@@ -3,31 +3,30 @@
 
 """
 Usage:
-	lys peer-configure -l <listener> -w <webhook>
-	lys deploy-listener <event> <module> (<regex> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
-	lys destroy-listener [<module>]
-	lys start-server
-	lys stop-server
+   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
+   lys destroy-listener [<function>]
+   lys start-server
+   lys stop-server
 
 Options:
--c --condition=<condition> : 
--f --field=<field>         : 
--l --listener=<listener>   :
--v --value=<value>         : 
--w --webhook=<webhook>     : 
+-f --field=<field>         : the transaction field to be checked by the node
+-c --condition=<condition> : the condition operator used to check the field
+-v --value=<value>         : the value triggering the webhook
+-l --listener=<listener>   : the peer receiving whebhook POST request
+-w --webhook=<webhook>     : the peer registering the webhook
 
 Subcommands:
-	peer-configure   :
-	deploy-listener  : 
-	destroy-listener : 
-	start-server     : start/restart lystener server
-	stop-server      : stop lystener server
+   deploy-listener  : link a webhook <event> with a python <function> 
+   destroy-listener : unlink webhook <event> from python <function>
+   start-server     : start/restart listener server
+   stop-server      : stop listener server
 """
 
 import os
 import sys
 import docopt
 
+# add lystener path if not installed via pip tool
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
 import lystener
 from lystener import rest, loadJson, dumpJson, logMsg
@@ -41,96 +40,138 @@ if [ "$(pm2 id lystener-server) " = "[] " ]; then
 else
 	pm2 restart lystener-server
 fi
-""" % {"abspath": os.path.abspath(os.path.dirname(__file__))}
+""" % {"abspath": os.path.join(lystener.__path__[0], "..")}
 )
 
 
 def stop_server(args={}, **options):
-	os.chdir(os.path.abspath(os.path.dirname(__file__)))
 	os.system("""
 if [ "$(pm2 id lystener-server) " != "[] " ]; then
 	cd %(abspath)s
 	pm2 stop lystener-server
 fi
-""" % {"abspath": os.path.abspath(os.path.dirname(__file__))}
+""" % {"abspath": os.path.join(lystener.__path__[0], "..")}
 )
 
 
 def deploy_listener(args={}, **options):
-	module = args["<module>"]
-	json_name = "%s.json" % module
+	"""
+	link ark blockchain event to a python function.
+	"""
+
+	# function should be a string : module_name.function_name
+	function = args["<function>"]
+	json_name = "%s.json" % function
+	# build default peers
 	webhook_peer = options.get("webhook", "%(protocol)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
-	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) +"/"+ module
+	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER)
 
 	# compute listener condition
-	if "<regex>" in args:
+	# if only a regexp is givent compute condition on vendorField
+	if "<regexp>" in args:
 		condition = {
 			"key": "vendorField",
 			"condition": "regexp",
-			"value": args["<regex>"]
+			"value": args["<regexp>"]
 		}
+	# else create a condition.
+	# Ark webhook api will manage condition errors
 	elif len(options):
 		condition = {
-			"key": options["field"],
+			"field": options["field"],
 			"condition": options["condition"],
 			"value": options["value"]
 		}
 
-	# create a webhook if no one is set
+	# load webhook configuration if already set
 	webhook = loadJson(json_name)
+	# loadJson returns void dict if json_name not found,
+	# the if clause bellow will be true then
 	if not webhook.get("token", False):
-		webhook = rest.POST.api.webhooks(
+		# create the webhook
+		req = rest.POST.api.webhooks(
 			event=args["<event>"],
 			peer=webhook_peer,
-			target=listener_peer,
+			target=listener_peer +"/"+ "/".join(function.split(".")),
 			conditions=[condition]
-		).get("data", False)
-		if webhook:
+		)
+		# parse request result
+		if not req.get("error", False):
+			webhook = req["data"]
+			# save the used peer to be able to delete it later
 			webhook["peer"] = webhook_peer
+			# save webhook configuration in JSON folder
 			dumpJson(webhook, json_name)
-			logMsg("%s webhook set" % module)
+			logMsg("%s webhook set" % function)
 		else:
-			logMsg("%s webhook not set" % module)
+			logMsg("%r" % req)
+			logMsg("%s webhook not set" % function)
 	else:
-		logMsg("webhook already set for %s" % module)	
+		logMsg("webhook already set for %s" % function)
 
 
 def destroy_listener(args={}, **options):
-	json_name = "%s.json" % args["<module>"]
-	webhook = loadJson(json_name)
-	rest.DELETE.api.webhooks(webhook["id"], peer=webhook["peer"])
-	os.remove(os.path.join(lystener.JSON, json_name))
-	logMsg("%s webhook destroyed" % module)	
+	"""
+	unlink ark blockchain event from a python function.
+	"""
+
+	function = args.get("<function>", False)
+	if not function:
+		logMsg("manual selection not implemented yet")
+		# list on screen item found in JSON folder
+		# and select one manually...
+	else:
+		json_name = "%s.json" % args["<function>"]
+		# load webhook configuration
+		webhook = loadJson(json_name)
+		# condition bellow checks if webhook configurations is found
+		if webhook.get("peer", False):
+			# delete webhook usong its id and parent peer
+			rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
+			# delete the webhook configuration
+			os.remove(os.path.join(lystener.JSON, json_name))
+			logMsg("%s webhook destroyed" % function)
+		else:
+			logMsg("%s webhook not found" % function)
 
 
+# command line execution
+########################
 if __name__ == "__main__":
 
 	FILTER = {
-		"--condition": lambda value: str(value),
-		"--field":     lambda value: str(value),
-		"--listener":  lambda value: str(value),
-		"--value":     lambda value: str(value),
-		"--webhook":   lambda value: str(value),
+		"--condition": lambda value: value,
+		"--field":     lambda value: value,
+		"--listener":  lambda value: value,
+		"--value":     lambda value: value,
+		"--webhook":   lambda value: value,
+		"<regexp>":    lambda value: getattr(value, "pattern", value)
 	}
 
+	# will get the first argument which is neither a value neither an option
 	def getAction(args):
 		for action in [k for k in args if k[0] not in ["-", "<"]]:
 			if args[action] == True:
 				return action
 		return False
 
+	# will rename --multi-word-option to multi_word_option
 	def getOptions(args):
 		options = {}
 		for option,value in [(k,v) for k,v in args.items() if k.startswith("--") and v != None]:
-			options[option[2:].replace("-", "_")] = FILTER[option](value)
+			options[option[2:].replace("-", "_")] = value
 		return dict((k,v) for k,v in options.items() if v != None)
 
+	# see http://docopt.org
 	args = docopt.docopt(__doc__, argv=sys.argv[1:])
+	for key,cast in [(k,c) for k,c in FILTER.items() if k in args]:
+		args[key] = cast(args[key])
 
 	action = getAction(args)
 	options = getOptions(args)
 
 	if action:
+		# rename multi-word-action to multi_word_action
 		func = getattr(sys.modules[__name__], action.replace("-", "_"))
 		if callable(func):
 			func(args, **options)

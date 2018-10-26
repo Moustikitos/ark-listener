@@ -9,13 +9,25 @@ import datetime
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
+input = input if PY3 else raw_input
+
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))
 JSON = os.path.abspath(os.path.join(ROOT, ".json"))
 DATA = os.path.abspath(os.path.join(ROOT, "app", ".data"))
 LOG = os.path.abspath(os.path.join(ROOT, "app", ".log"))
 
+
+# add the modules folder to the package path
 __path__.append(os.path.abspath(os.path.join(ROOT, "modules")))
+# add custom modules pathes from modules.pth file
+pathfile = os.path.join(ROOT, "modules.pth")
+if os.path.exists(pathfile):
+	with io.open(pathfile) as pathes:
+		comment = re.compile(r"^[\s]*#.*")
+		for path in [p.strip() for p in pathes.read().split("\n") if not comment.match(p)]:
+			if p != "":
+				__path__.append(os.path.abspath(path))
 
 
 def loadJson(name, folder=None):
@@ -70,4 +82,35 @@ def logMsg(msg, logname=None):
 		stdout = sys.stdout
 	stdout.write(">>> [%s] %s\n" % (datetime.datetime.now().strftime("%x %X"), msg))
 	stdout.flush()
-	return stdout.close() if logname else None
+	
+	if logname:
+		return stdout.close()
+
+
+def chooseItem(msg, *elem):
+	n = len(elem)
+	if n > 1:
+		sys.stdout.write(msg + "\n")
+		for i in range(n):
+			sys.stdout.write("    %d - %s\n" % (i + 1, elem[i]))
+		sys.stdout.write("    0 - quit\n")
+		i = -1
+		while i < 0 or i > n:
+			try:
+				i = input("Choose an item: [1-%d]> " % n)
+				i = int(i)
+			except ValueError:
+				i = -1
+			except KeyboardInterrupt:
+				sys.stdout.write("\n")
+				sys.stdout.flush()
+				return False
+		if i == 0:
+			return None
+		return elem[i - 1]
+	elif n == 1:
+		return elem[0]
+	else:
+		sys.stdout.write("Nothing to choose...\n")
+		return False
+
