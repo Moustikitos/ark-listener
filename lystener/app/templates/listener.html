@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 {%- block body %}
 <h1>Event listening</h1>
-	<table>
+	<table cellpadding="5">
+		<thead>
+			<tr><td>ID</td><td>Webhook peer</td><td>Listened event</td><td>Condition</td></tr>
+		</thead>
+		<tbody>
 	{%- for data in webhooks %}
-		
+		<tr>
+			<td><a href="{{data['peer']}}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>
+			<td>{{ data["peer"] }}</td>
+			<td>{{ data["event"] }}</td>
+			<td>
+		{%- for cond in data["conditions"] %}
+			{{ ("%(key)s&nbsp;%(condition)s&nbsp;'%(value)s'" % cond)|safe }} <br/>
+		{%- endfor %}
+			</td>
+		</tr>
 	{%- endfor %}
+		</tbody>
 	</table>
 {%- endblock body %}

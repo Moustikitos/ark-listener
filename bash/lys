@@ -29,7 +29,7 @@ import docopt
 # add lystener path if not installed via pip tool
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
 import lystener
-from lystener import rest, loadJson, dumpJson, logMsg
+from lystener import rest, logMsg, loadJson, dumpJson, chooseItem
 
 
 def start_server(args={}, **options):
@@ -118,21 +118,23 @@ def destroy_listener(args={}, **options):
 	function = args.get("<function>", False)
 	if not function:
 		logMsg("manual selection not implemented yet")
-		# list on screen item found in JSON folder
-		# and select one manually...
+		listeners = [name.replace(".json", "") for name in os.listdir(lystener.JSON) if name.endswith(".json")]
+		choice = chooseItem("Select listener to destroy:", *listeners)
+		if not choice: return
+		else: args["<function>"] = choice
+
+	json_name = "%s.json" % args["<function>"]
+	# load webhook configuration
+	webhook = loadJson(json_name)
+	# condition bellow checks if webhook configurations is found
+	if webhook.get("peer", False):
+		# delete webhook usong its id and parent peer
+		rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
+		# delete the webhook configuration
+		os.remove(os.path.join(lystener.JSON, json_name))
+		logMsg("%s webhook destroyed" % function)
 	else:
-		json_name = "%s.json" % args["<function>"]
-		# load webhook configuration
-		webhook = loadJson(json_name)
-		# condition bellow checks if webhook configurations is found
-		if webhook.get("peer", False):
-			# delete webhook usong its id and parent peer
-			rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
-			# delete the webhook configuration
-			os.remove(os.path.join(lystener.JSON, json_name))
-			logMsg("%s webhook destroyed" % function)
-		else:
-			logMsg("%s webhook not found" % function)
+		logMsg("%s webhook not found" % function)
 
 
 # command line execution
