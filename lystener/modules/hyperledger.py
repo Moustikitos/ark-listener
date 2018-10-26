@@ -24,15 +24,16 @@ def executeInsurancePolicy(data):
 	}
 
 	# POST body to http://159.89.146.143:3000/api/endpoint using requests
-	result = requests.post(
-		"http://159.89.146.143:3000/api/"+endpoint,
-		data=json.dumps(body),
-		headers=headers,
-		verify=True
-	)
-
-	try: msg = json.dumps(result.json(), indent=2)
-	except: msg = result
+	try: 
+		result = requests.post(
+			"http://159.89.146.143:3000/api/"+endpoint,
+			data=json.dumps(body),
+			headers=headers,
+			verify=True
+		)
+		msg = json.dumps(result.json(), indent=2)
+	except Exception as error:
+		msg = "%r" % error
 	sys.stdout.write('>>> Transaction sent to hyperledger...\n')
 	sys.stdout.flush()
 	

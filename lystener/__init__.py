@@ -26,7 +26,7 @@ if os.path.exists(pathfile):
 	with io.open(pathfile) as pathes:
 		comment = re.compile(r"^[\s]*#.*")
 		for path in [p.strip() for p in pathes.read().split("\n") if not comment.match(p)]:
-			if p != "":
+			if path != "":
 				__path__.append(os.path.abspath(path))
 
 

@@ -2,6 +2,8 @@
 
 import os
 import re
+import sys
+import imp
 import json
 import flask
 import hashlib
@@ -75,6 +77,9 @@ def execute(module, name):
 			logMsg(msg)
 			return json.dumps({"success": False, "message": msg})
 
+		# remove the module so if it is modified it will be updated
+		sys.modules.pop(obj.__name__, False)
+		del obj
 		return json.dumps({"success": True, "message": response})
 
 	return flask.render_template(
