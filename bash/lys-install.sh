@@ -30,7 +30,7 @@ pip install --user -r requirements.txt -q
 echo
 echo initializing lystener
 echo =====================
-cp lys.py ~/lys
+cp listener/lys.py ~/lys
 cd ~
 chmod +x lys
 
