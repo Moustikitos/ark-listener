@@ -43,7 +43,6 @@ def index():
 
 @app.route("/<module>/<name>", methods=["POST", "GET"])
 def execute(module, name):
-	global CURRENT_HASH
 
 	if flask.request.method == "POST":
 		raw = flask.request.data

@@ -2,20 +2,24 @@
 {%- block body %}
 <h1>Event listeners</h1>
 	<table cellpadding="5">
-		<thead>
-			<tr><td>ID</td><td>Webhook peer</td><td>Listened event</td><td>Condition</td></tr>
+		<thead style="font-weight:bold;">
+			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Condition</td><td>Action</td></tr>
 		</thead>
 		<tbody>
 	{%- for data in webhooks %}
+		{%- set action = ".".join(data["target"].split("/")[-2:]) %}
 		<tr>
 			<td><a href="{{data['peer']}}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>
 			<td>{{ data["peer"] }}</td>
 			<td>{{ data["event"] }}</td>
 			<td>
 		{%- for cond in data["conditions"] %}
-			{{ ("%(key)s&nbsp;%(condition)s&nbsp;'%(value)s'" % cond)|safe }} <br/>
+			<p style="padding:0px;margin:0px;">
+				{{ ("%(key)s&nbsp;%(condition)s&nbsp;'%(value)s'" % cond)|safe }}
+			</p>
 		{%- endfor %}
 			</td>
+			<td>{{ action }}</td>
 		</tr>
 	{%- endfor %}
 		</tbody>
