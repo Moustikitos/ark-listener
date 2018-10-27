@@ -3,9 +3,17 @@ body {
 	font-family: 'Ubuntu', sans-serif;
 }
 
-thead tr{
+thead tr {
 	background-color: dimgrey;
 	font-weight:bold;
+}
+
+thead td {
+	font-size:14px;
+}
+
+tbody td {
+	font-size:13px;
 }
 
 tbody tr:nth-child(odd) {

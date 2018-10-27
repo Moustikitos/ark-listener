@@ -18,8 +18,11 @@ ate': 42, 'publicKey': '030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe\
 110d60a15e9', 'approval': 1.05, 'username': 'arky', 'missedblocks': 1499}}
 
 >>> # 'http://127.0.0.1:4004/api/webhooks/1 # need underscore if path element starts with a number
->>> rest.GET.api.webhooks._1(peer="http://127.0.0.1:4004")
-{}
+>>> rest.GET.api.webhooks._1(peer="http://127.0.0.1:4004").get("data")
+{'data': [{'target': 'http://127.0.0.1:5000/block/forged', 'enabled': True, 'ev\
+ent': 'block.forged', 'token': '61a4c809726a408702198d83c16c2d34', 'conditions'\
+: [{'key': 'generatorPublicKey', 'condition': 'eq', 'value': '03a02b9d5fdd1307c\
+2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'}], 'id': 1}]}
 """
 
 import re
@@ -27,20 +30,24 @@ import json
 import requests
 import lystener
 
+# default peer configuration
 LISTENER_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 5001}
 WEBHOOK_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 4004}
+# global var used by REST requests
 HEADERS = {"Content-Type": "application/json"}
-TIMEOUT = 5
+TIMEOUT = 7
 
-# load defaults peers
+# generate defaults peers
 peers = lystener.loadJson("peer.json", folder=lystener.__path__[0])
 LISTENER_PEER.update(peers.get("listener", {}))
 WEBHOOK_PEER.update(peers.get("webhook", {}))
+# dump peer.json on first import
 lystener.dumpJson(
 	{"listener":LISTENER_PEER, "webhook":WEBHOOK_PEER},
 	"peer.json",
 	folder=lystener.__path__[0]
 )
+
 
 class EndPoint(object):
 
