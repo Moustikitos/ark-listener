@@ -119,10 +119,9 @@ def destroy_listener(args={}, **options):
 	function = args.get("<function>", options.get("function", False))
 
 	if not function:
-		lystener.logMsg("manual selection not implemented yet")
 		listeners = [name.replace(".json", "") for name in os.listdir(lystener.JSON) if name.endswith(".json")]
 		function = lystener.chooseItem("Select listener to destroy:", *listeners)
-		if not choice: return
+		if not function: return
 
 	json_name = "%s.json" % function
 	# load webhook configuration

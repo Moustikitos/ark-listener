@@ -32,6 +32,15 @@ app.config.update(
 )
 
 
+@app.route("/")
+def index():
+	if os.path.exists(os.path.join(lystener.ROOT, ".json")):
+		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
+	else:
+		json_list = []
+	return flask.render_template("listener.html", webhooks=json_list)
+
+
 @app.route("/<module>/<name>", methods=["POST", "GET"])
 def execute(module, name):
 	global CURRENT_HASH
@@ -91,13 +100,7 @@ def execute(module, name):
 		del obj
 		return json.dumps({"success": True, "message": response})
 
-	# if GET method, put all registered listener on the node
-	if os.path.exists(os.path.join(lystener.ROOT, ".json")):
-		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
-	else:
-		json_list = []
-
-	return flask.render_template("listener.html", webhooks=json_list)
+	return flask.redirect(flask.url_for("index"))
 
 
 def initDB():
