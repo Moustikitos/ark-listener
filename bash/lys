@@ -26,10 +26,13 @@ import os
 import sys
 import docopt
 
-# add lystener path if not installed via pip tool
+# add git installation
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
+# add parent path if executed from git structure
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import lystener
-from lystener import rest, logMsg, loadJson, dumpJson, chooseItem
+from lystener import rest
 
 
 def start_server(args={}, **options):
@@ -59,16 +62,19 @@ def deploy_listener(args={}, **options):
 	link ark blockchain event to a python function.
 	"""
 
-	# function should be a string : module_name.function_name
-	function = args["<function>"]
+	function = args.get("<function>", options.get("function", False))
+	regexp = args.get("<regexp>", options.get("regexp", False))
+	event = args.get("<event>", options.get("event", False))
 	json_name = "%s.json" % function
-	# build default peers
+
+	# build peers and target url
 	webhook_peer = options.get("webhook", "%(protocol)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
 	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER)
+	target_url = listener_peer +"/"+ function.replace(".", "/")
 
 	# compute listener condition
 	# if only a regexp is givent compute condition on vendorField
-	if "<regexp>" in args:
+	if regexp:
 		condition = {
 			"key": "vendorField",
 			"condition": "regexp",
@@ -84,30 +90,25 @@ def deploy_listener(args={}, **options):
 		}
 
 	# load webhook configuration if already set
-	webhook = loadJson(json_name)
-	# loadJson returns void dict if json_name not found,
+	webhook = lystener.loadJson(json_name)
+	# lystener.loadJson returns void dict if json_name not found,
 	# the if clause bellow will be true then
 	if not webhook.get("token", False):
 		# create the webhook
-		req = rest.POST.api.webhooks(
-			event=args["<event>"],
-			peer=webhook_peer,
-			target=listener_peer +"/"+ "/".join(function.split(".")),
-			conditions=[condition]
-		)
-		# parse request result
+		req = rest.POST.api.webhooks(event=event, peer=webhook_peer, target=target_url, conditions=[condition])
+		# parse request result if no error messages
 		if not req.get("error", False):
 			webhook = req["data"]
 			# save the used peer to be able to delete it later
 			webhook["peer"] = webhook_peer
 			# save webhook configuration in JSON folder
-			dumpJson(webhook, json_name)
-			logMsg("%s webhook set" % function)
+			lystener.dumpJson(webhook, json_name)
+			lystener.logMsg("%s webhook set" % function)
 		else:
-			logMsg("%r" % req)
-			logMsg("%s webhook not set" % function)
+			lystener.logMsg("%r" % req)
+			lystener.logMsg("%s webhook not set" % function)
 	else:
-		logMsg("webhook already set for %s" % function)
+		lystener.logMsg("webhook already set for %s" % function)
 
 
 def destroy_listener(args={}, **options):
@@ -115,26 +116,26 @@ def destroy_listener(args={}, **options):
 	unlink ark blockchain event from a python function.
 	"""
 
-	function = args.get("<function>", False)
-	if not function:
-		logMsg("manual selection not implemented yet")
-		listeners = [name.replace(".json", "") for name in os.listdir(lystener.JSON) if name.endswith(".json")]
-		choice = chooseItem("Select listener to destroy:", *listeners)
-		if not choice: return
-		else: args["<function>"] = choice
+	function = args.get("<function>", options.get("function", False))
 
-	json_name = "%s.json" % args["<function>"]
+	if not function:
+		lystener.logMsg("manual selection not implemented yet")
+		listeners = [name.replace(".json", "") for name in os.listdir(lystener.JSON) if name.endswith(".json")]
+		function = lystener.chooseItem("Select listener to destroy:", *listeners)
+		if not choice: return
+
+	json_name = "%s.json" % function
 	# load webhook configuration
-	webhook = loadJson(json_name)
+	webhook = lystener.loadJson(json_name)
 	# condition bellow checks if webhook configurations is found
 	if webhook.get("peer", False):
 		# delete webhook usong its id and parent peer
 		rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
 		# delete the webhook configuration
 		os.remove(os.path.join(lystener.JSON, json_name))
-		logMsg("%s webhook destroyed" % function)
+		lystener.logMsg("%s webhook destroyed" % function)
 	else:
-		logMsg("%s webhook not found" % function)
+		lystener.logMsg("%s webhook not found" % function)
 
 
 # command line execution

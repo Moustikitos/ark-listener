@@ -63,10 +63,10 @@ Link a `transaction.applied` event to executeInsurancePolicy function from
 ```
 ```python
 >>> from lys import deploy_listener
->>> deploy_listener({
-...     "<event>":"transaction.applied",
-...     "<function>":"hyperledger.executeInsurancePolicy",
-...     "<regexp>":r"^sc:.*$"})
+>>> deploy_listener(
+...     event=transaction.applied",
+...     function="hyperledger.executeInsurancePolicy",
+...     regexp=r"^sc:.*$")
 ```
 
 or
@@ -76,10 +76,9 @@ or
 ```
 ```python
 >>> from lys import deploy_listener
->>> deploy_listener({
-...     "<event>":"transaction.applied",
-...     "<function>":"hyperledger.executeInsurancePolicy"
-...     },
+>>> deploy_listener(
+...     event="transaction.applied",
+...     function="hyperledger.executeInsurancePolicy",
 ...     field="vendorField",
 ...     condition="regexp",
 ...     value=r"^sc:.*$")

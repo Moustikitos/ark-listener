@@ -1,10 +1,12 @@
 {
 	"apps": [{
 		"name": "lystener-server",
-		"script": "lys.py",
+		"script": "srv.py",
+		"args": "--ip=127.0.0.1 --port=5001",
 		"instances": 1,
 		"exec_mode": "fork",
 		"exec_interpreter": "python",
-		"log_date_format": "YYYY-MM-DD HH:mm Z"
+		"log_date_format": "YYYY-MM-DD HH:mm Z",
+		"combine_logs": true
 	}]
 }
