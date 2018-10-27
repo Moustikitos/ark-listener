@@ -1,19 +1,5 @@
 # ark-listener
 
-## Concept
-
-Ark core webhooks triggers POST requests containing data as JSON object to a
-targeted peer. This one then have to parse this data to trigger code execution.
-
-`ark-listener` uses a Flask application parsing every POST requests received with
-the pattern : `http://0.0.0.0:5001/module/function`.
-
-for example, a POST to `http://0.0.0.0:5001/hyperledger/executeInsurancePolicy`
-will be understand as : execute `executeInsurancePolicy` function from `hyperledger`
-module with JSON found in request. In this particular case, the python code
-triggered have to send data to hyperledger according to the targeted smart
-contract specification.
-
 ## Supported blockchain
 
  * [X] Ark-v2
@@ -24,6 +10,30 @@ contract specification.
 wget https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh
 bash install.sh
 ```
+
+## Concept
+
+Ark core webhooks triggers POST requests containing data as JSON object to a
+targeted peer. This one then have to parse data and trigger code execution.
+
+`ark-listener` uses a Flask application listening every POST requests received
+with the pattern : `http://0.0.0.0:5001/module/function`.
+
+for example, a POST to `http://0.0.0.0:5001/hyperledger/executeInsurancePolicy`
+will be understand as : execute `executeInsurancePolicy` function from `hyperledger`
+module with JSON found in request. In this particular case, the python code
+triggered have to send data to hyperledger according to the targeted smart
+contract specification.
+
+## Where is stored code to execute ?
+
+The ark-listener tree contains a `modules` folder where you can save your
+custom to execute. If another place is needed, you can add the path to the
+`modules.pth` file and lystener will be able to find it.
+
+## How can i know the listener deployed ?
+
+The listening server redirects browser to a deployed listener details page.
 
 ## `lys` commands
 
@@ -36,8 +46,8 @@ cd ~
 Usage:
    lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
    lys destroy-listener [<function>]
-   lys start-server
-   lys stop-server
+   lys start-listening [-i <ip> -p <port>]
+   lys stop-listening
 
 Options:
 -f --field=<field>         : the transaction field to be checked by the node
@@ -45,12 +55,14 @@ Options:
 -v --value=<value>         : the value triggering the webhook
 -l --listener=<listener>   : the peer receiving whebhook POST request
 -w --webhook=<webhook>     : the peer registering the webhook
+-i --ip=<ip>               : the ip used for listening server   [default: 0.0.0.0]
+-p --port=<port>           : the port used for listening server [default: 5001]
 
 Subcommands:
    deploy-listener  : link a webhook <event> with a python <function> 
    destroy-listener : unlink webhook <event> from python <function>
-   start-server     : start/restart listener server
-   stop-server      : stop listener server
+   start-listening  : start/restart listener server
+   stop-listening   : stop listener server
 ```
 
 ## Example

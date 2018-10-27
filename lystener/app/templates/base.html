@@ -4,6 +4,8 @@
 <head>
 	<link href='http://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet' type='text/css' />
 	<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}?q={{ seq | random }}" />
+	{%- block title %}
+	{%- endblock title %}
 </head>
 
 <body>

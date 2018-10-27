@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+{%- block title %}
+<title>Deployed listener</title>
+{%- endblock title %}
 {%- block body %}
-<h1>Event listeners</h1>
+<div>
+<h1>Details</h1>
 	<table cellpadding="5">
 		<thead style="font-weight:bold;">
-			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Condition</td><td>Action</td></tr>
+			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Conditions</td><td>Python module</td><td>Hits</td></tr>
 		</thead>
 		<tbody>
 	{%- for data in webhooks %}
@@ -15,13 +19,15 @@
 			<td>
 		{%- for cond in data["conditions"] %}
 			<p style="padding:0px;margin:0px;">
-				{{ ("%(key)s&nbsp;%(condition)s&nbsp;'%(value)s'" % cond)|safe }}
+				{{ ("%(key)s&nbsp;|&nbsp;%(condition)s&nbsp;|&nbsp;%(value)s" % cond)|safe }}
 			</p>
 		{%- endfor %}
 			</td>
 			<td>{{ action }}</td>
+			<td>{{ counts[action] }}</td>
 		</tr>
 	{%- endfor %}
 		</tbody>
 	</table>
+</div>
 {%- endblock body %}

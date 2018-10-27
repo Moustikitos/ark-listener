@@ -25,26 +25,22 @@ ate': 42, 'publicKey': '030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe\
 import re
 import json
 import requests
+import lystener
 
-# by default, listener peer is the server.
-LISTENER_PEER = {
-	"protocol": "http",
-	"ip": "127.0.0.1",
-	"port": 5001
-}
-
-WEBHOOK_PEER = {
-	"protocol": "http",
-	"ip": "127.0.0.1",
-	"port": 4004
-}
-
-HEADERS = {
-	"Content-Type": "application/json"
-}
-
+LISTENER_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 5001}
+WEBHOOK_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 4004}
+HEADERS = {"Content-Type": "application/json"}
 TIMEOUT = 5
 
+# load defaults peers
+peers = lystener.loadJson("peer.json", folder=lystener.__path__[0])
+LISTENER_PEER.update(peers.get("listener", {}))
+WEBHOOK_PEER.update(peers.get("webhook", {}))
+lystener.dumpJson(
+	{"listener":LISTENER_PEER, "webhook":WEBHOOK_PEER},
+	"peer.json",
+	folder=lystener.__path__[0]
+)
 
 class EndPoint(object):
 

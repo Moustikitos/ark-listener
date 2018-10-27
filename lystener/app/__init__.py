@@ -30,6 +30,9 @@ app.config.update(
 	# 
 	TEMPLATES_AUTO_RELOAD = True
 )
+# redirect commn http errors to index
+app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
+app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
 
 @app.route("/")
@@ -38,7 +41,11 @@ def index():
 		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
 	else:
 		json_list = []
-	return flask.render_template("listener.html", webhooks=json_list)
+	cursor = connect()
+	return flask.render_template("listener.html",
+		counts=dict(cursor.execute("SELECT module, count(*) FROM history GROUP BY module").fetchall()),
+		webhooks=json_list
+	)
 
 
 @app.route("/<module>/<name>", methods=["POST", "GET"])

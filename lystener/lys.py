@@ -5,8 +5,8 @@
 Usage:
    lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
    lys destroy-listener [<function>]
-   lys start-server
-   lys stop-server
+   lys start-listening [-i <ip> -p <port>]
+   lys stop-listening
 
 Options:
 -f --field=<field>         : the transaction field to be checked by the node
@@ -14,12 +14,14 @@ Options:
 -v --value=<value>         : the value triggering the webhook
 -l --listener=<listener>   : the peer receiving whebhook POST request
 -w --webhook=<webhook>     : the peer registering the webhook
+-i --ip=<ip>               : the ip used for listening server   [default: 0.0.0.0]
+-p --port=<port>           : the port used for listening server [default: 5001]
 
 Subcommands:
    deploy-listener  : link a webhook <event> with a python <function> 
    destroy-listener : unlink webhook <event> from python <function>
-   start-server     : start/restart listener server
-   stop-server      : stop listener server
+   start-listening  : start/restart listener server
+   stop-listening   : stop listener server
 """
 
 import os
@@ -35,26 +37,34 @@ import lystener
 from lystener import rest
 
 
-def start_server(args={}, **options):
+def start_listening(args={}, **options):
+	# persistent options effect
+	# modifying the pm2 app.json configuration 
+	app_folder = os.path.abspath(os.path.dirname(lystener.__path__[0]))
+	app = lystener.loadJson("app.json", folder=app_folder)
+	app["apps"][0]["args"] = " ".join(["--{0:s}={1:s}".format(*item) for item in options.items()])
+	lystener.dumpJson(app, "app.json", folder=app_folder)
+	# execute pm2 command lines
 	os.system("""
-if [ "$(pm2 id lystener-server) " = "[] " ]; then
-	cd %(abspath)s
-	pm2 start app.json
-else
-	pm2 restart lystener-server
-fi
-""" % {"abspath": os.path.join(lystener.__path__[0], "..")}
+	if [ "$(pm2 id lystener-server) " = "[] " ]; then
+		cd %(abspath)s
+		pm2 start app.json
+	else
+		pm2 restart lystener-server
+	fi
+	""" % {"abspath": app_folder}
 )
 
 
-def stop_server(args={}, **options):
+def stop_listening(args={}, **options):
+	# execute pm2 command lines
 	os.system("""
-if [ "$(pm2 id lystener-server) " != "[] " ]; then
-	cd %(abspath)s
-	pm2 stop lystener-server
-fi
-""" % {"abspath": os.path.join(lystener.__path__[0], "..")}
-)
+	if [ "$(pm2 id lystener-server) " != "[] " ]; then
+		cd %(abspath)s
+		pm2 stop lystener-server
+	fi
+	""" % {"abspath": os.path.abspath(os.path.dirname(lystener.__path__[0]))}
+	)
 
 
 def deploy_listener(args={}, **options):
