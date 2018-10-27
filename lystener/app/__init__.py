@@ -117,3 +117,10 @@ def connect():
 	if not hasattr(flask.g, "database"):
 		setattr(flask.g, "database", initDB())
 	return getattr(flask.g, "database").cursor()
+
+
+@app.teardown_appcontext
+def close(*args, **kw):
+	if hasattr(flask.g, "database"):
+		flask.g.database.commit()
+		flask.g.database.close()
