@@ -8,7 +8,7 @@
 
 ```bash
 wget https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh
-bash install.sh
+bash lys-install.sh
 ```
 
 ## Concept
