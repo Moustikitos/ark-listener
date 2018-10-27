@@ -1,12 +1,14 @@
 {% extends "base.html" %}
+
 {%- block title %}
 <title>Deployed listener</title>
 {%- endblock title %}
+
 {%- block body %}
-<div>
+<div class="content">
 <h1>Details</h1>
-	<table cellpadding="5">
-		<thead style="font-weight:bold;">
+	<table cellpadding="4" cellspacing="1">
+		<thead>
 			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Conditions</td><td>Python module</td><td>Hits</td></tr>
 		</thead>
 		<tbody>

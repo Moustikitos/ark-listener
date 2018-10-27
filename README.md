@@ -28,12 +28,12 @@ contract specification.
 ## Where is stored code to execute ?
 
 The ark-listener tree contains a `modules` folder where you can save your
-custom to execute. If another place is needed, you can add the path to the
-`modules.pth` file and lystener will be able to find it.
+custom code to execute. If another place is needed, simply add the path to the
+`modules.pth` file and `lystener` will be able to find it.
 
-## How can i know the listener deployed ?
+## How can I check deployed listeners ?
 
-The listening server redirects browser to a deployed listener details page.
+The listening server redirects browser to listener details page.
 
 ## `lys` commands
 
@@ -67,7 +67,7 @@ Subcommands:
 
 ## Example
 
-Link a `transaction.applied` event to executeInsurancePolicy function from
+Link a `transaction.applied` event to `executeInsurancePolicy` function from
 `hyperledger.py` python module parsing vendorField content (4 ways).
 
 ```bash
@@ -100,3 +100,25 @@ Now each transaction with vendorField starting with `sc:` will trigger
 `executeInsurancePolicy`. Webhook peer is `http://127.0.0.1:4004` and listener
 one is `http://127.0.0.1:5001`. Lystener server and webhook-api-enabled
 ark-core-relay instance have to be running on the node then.
+
+```
+{
+  "amount": 100000000,
+  "asset": {},
+  "fee": 5128149,
+  "id": "79af5a0fa8ffdc166a3fceb4ae6fd4d80e53e57db2bb0eed849979fe45693bf2",
+  "recipientId": "DGuuCwJYoEheBAC4PZTBSBasaDHxg2e6j7",
+  "senderId": "D7seWn8JLVwX4nHd9hh2Lf7gvZNiRJ7qLk",
+  "senderPublicKey": "03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933",
+  "signSignature": "304402200d89ce33ffe5a89b70cec179ca80541380cd1e3b2c7332b6f69dd36f315ce5ba022022969c81184a1f8051b846bd8d41daafc92959229736dc6cb3a79995e92a95d3",
+  "signature": "30450221008f19ec684b890464da23f18bcc741a1f5b46bb4a6b130c8b1d3c0078e2e89a7002207283460aa9ac1f0eb2ddf195a8f3ede6c7de4053652df76528322f608d0d2640",
+  "timestamp": 50540092,
+  "type": 0,
+  "vendorField": "sc:ins:PolicyPaymentTransaction:2345"
+}
+```
+```
+2018-10-27 11:56 +00:00: >>> Transaction sent to hyperledger...
+2018-10-27 11:56 +00:00: >>> [10/27/18 11:56:42] executeInsurancePolicy response:
+2018-10-27 11:56 +00:00: ConnectionError(MaxRetryError("HTTPConnectionPool(host='159.89.146.143', port=3000): Max retries exceeded with url: /api/PolicyPaymentTransaction (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f30a680c050>: Failed to establish a new connection: [Errno 111] Connection refused',))",),)
+```

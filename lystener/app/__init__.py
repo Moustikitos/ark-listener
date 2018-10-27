@@ -10,6 +10,7 @@ import hashlib
 import sqlite3
 
 import lystener
+from collections import OrderedDict
 from importlib import import_module
 from lystener import logMsg, loadJson
 
@@ -69,19 +70,20 @@ def execute(module, name):
 
 		# use sqlite database to check if data already parsed once
 		cursor = connect()
-		# remove all trailling spaces, new lines, tabs etc...
-		raw = re.sub(r"[\s]*", "", raw)
-		# copute sha256 hash
-		h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-		h = h.decode() if isinstance(h, bytes) else h
-		# check if hash already exists
-		cursor.execute("SELECT count(*) FROM history WHERE hash = ?", (h,))
-		if cursor.fetchone()[0] == 0:
-			# insert hash if 
-			cursor.execute("INSERT OR REPLACE INTO history(hash, module) VALUES(?,?);", (h, path_module))
+		if "signature" in data:
+			signature = data["signature"]
 		else:
-			logMsg("transaction already parsed")
-			return json.dumps({"success": False, "message": "transaction already parsed"})
+			# remove all trailling spaces, new lines, tabs etc...
+			raw = re.sub(r"[\s]*", "", sameDataSort(data))
+			h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+			signature = h.decode() if isinstance(h, bytes) else h
+		cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
+		if cursor.fetchone()[0] == 0:
+			# insert signature
+			cursor.execute("INSERT OR REPLACE INTO history(signature, module) VALUES(?,?);", (signature, path_module))
+		else:
+			logMsg("data already parsed")
+			return json.dumps({"success": False, "message": "data already parsed"})
 	
 		# import asked module
 		try:
@@ -95,7 +97,7 @@ def execute(module, name):
 		func = getattr(obj, name, False)
 		if func:
 			response = func(data)
-			logMsg("%s execution:\n%s" % (name, response))
+			logMsg("%s response:\n%s" % (name, response))
 		else:
 			msg = "python definition %s not found in %s" % (name, module)
 			logMsg(msg)
@@ -109,14 +111,37 @@ def execute(module, name):
 	return flask.redirect(flask.url_for("index"))
 
 
+@app.teardown_appcontext
+def close(*args, **kw):
+	if hasattr(flask.g, "database"):
+		flask.g.database.commit()
+		flask.g.database.close()
+
+
+@app.context_processor
+def override_url_for():
+	return dict(url_for=dated_url_for)
+
+
+def sameDataSort(data, reverse=False):
+	if isinstance(data, (list, tuple)):
+		return list[sorted(elem, reverse=reverse)]
+	elif isintace(data, dict):
+		result = OrderedDict()
+		for key,value in sorted([(k,v) for k,v in data.items()], key=lambda e:e[0], reverse=reverse):
+			result[k] = sameDataSort(value, reverse)
+	else:
+		return data
+
+
 def initDB():
 	database = os.path.join(lystener.DATA, "database.db")
 	if not os.path.exists(database):
 		os.makedirs(lystener.DATA)
 	sqlite = sqlite3.connect(database)
 	cursor = sqlite.cursor()
-	cursor.execute("CREATE TABLE IF NOT EXISTS history(hash TEXT, module TEXT);")
-	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(hash);")
+	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, module TEXT);")
+	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
 	sqlite.row_factory = sqlite3.Row
 	sqlite.commit()
 	return sqlite
@@ -128,8 +153,10 @@ def connect():
 	return getattr(flask.g, "database").cursor()
 
 
-@app.teardown_appcontext
-def close(*args, **kw):
-	if hasattr(flask.g, "database"):
-		flask.g.database.commit()
-		flask.g.database.close()
+def dated_url_for(endpoint, **values):
+	if endpoint == 'static':
+		filename = values.get("filename", False)
+		if filename:
+			file_path = os.path.join(app.root_path, endpoint, filename)
+			values["q"] = int(os.stat(file_path).st_mtime)
+	return flask.url_for(endpoint, **values)
