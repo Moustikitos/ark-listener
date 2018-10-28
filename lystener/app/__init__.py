@@ -37,6 +37,13 @@ app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("in
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
 # load listener.ini config file if found
+# EXAMPLE
+# [Autorizations]
+# cc89e79975ea6ce45aa3a2fd7a54d383=forger.logSomething
+# 37124939c97757349fc2f632683ef44e=hyperledger.executeInsurancePolicy	
+# [Hub]
+# 1=http://144.202.75.170:5001/test/block
+# 2=http://15.76.33.73:5000/test/block
 app.config.ini = configparser.ConfigParser(allow_no_value=True)
 inifile = os.path.join(lystener.DATA, "listener.ini")
 if os.path.exists(inifile):
@@ -50,11 +57,11 @@ def index():
 	else:
 		json_list = []
 
-	if app.config.ini.has_section("Autorization"):
-		tiny_list = dict(app.config.ini.items("Autorization", vars={}))
+	if app.config.ini.has_section("Autorizations"):
+		tiny_list = dict(app.config.ini.items("Autorizations", vars={}))
 	else:
 		tiny_list = {}
-	
+
 	cursor = connect()
 	return flask.render_template("listener.html",
 		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
