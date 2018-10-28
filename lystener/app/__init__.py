@@ -8,11 +8,12 @@ import json
 import flask
 import hashlib
 
+
 import requests
 import lystener
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson, initDB
+from lystener import logMsg, loadJson, initDB, loadEnv, configparser
 
 
 # create the application instance 
@@ -34,6 +35,12 @@ app.config.update(
 # redirect commn http errors to index
 app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
+
+# pass
+app.config.ini = configparser.ConfigParser(allow_no_value=True)
+inifile = os.path.join(lystener.DATA, "listener.ini")
+if os.path.exists(inifile):
+	app.config.ini.read(inifile)
 
 
 @app.route("/")
@@ -65,7 +72,8 @@ def execute(module, name):
 
 		# check autorization and exit if bad one
 		webhook = loadJson("%s.json" % path_module)
-		if not webhook.get("token", "").startswith(autorization):
+		if not webhook.get("token", "").startswith(autorization) and \
+		   not app.config.ini.get("Autorization", autorization, fallback=False):
 			logMsg("not autorized here")
 			return json.dumps({"success": False, "message": "not autorized here"})
 
@@ -82,26 +90,28 @@ def execute(module, name):
 		cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
 		if cursor.fetchone()[0] == 0:
 			# insert signature if no one found in database
-			cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (signature, autorizations))
+			cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (signature, autorization))
 		else:
 			# exit if signature found in database
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
 		# act as a hub if asked
-		if webhook.get("hub", False):
-			result = dict(zip(
-				webhook["hub"],
-				[requests.post(
-					endpoint,
-					data=flask.request.data,
-					headers=flask.request.headers,
-					timeout=rest.TIMEOUT,
-					verify=True).text for endpoint in webhook["hub"]]
-			))
-			msg = "event broadcasted to hub :\n%s" % json.dumps(result, indent=2)
+		endpoints = webhook.get("hub", [])
+		if app.config.ini.has_section("Hub"):
+			endpoints.extend([item[0] for item in app.config.ini.items("Hub", vars={})])
+		if len(endpoints):
+			result = []
+			for endpoint in endpoints:
+				try:
+					req = request.post(endpoint, data=flask.request.data, headers=flask.request.headers, timeout=rest.TIMEOUT, verify=True)
+				except Exception as error:
+					result.append({"success":False,"error":error,"except":True})
+				else:
+					result.append(req.text)
+			msg = "event broadcasted to hub :\n%s" % json.dumps(dic(zip(endpoints, result)), indent=2)
 			logMsg(msg)
-			# if node is used as a hub... should not have to execute something
+			# if node is used as a hub, should not have to execute something
 			# so exit here
 			return json.dumps({"success": True, "message": msg})
 

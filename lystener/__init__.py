@@ -11,7 +11,13 @@ import datetime
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
-input = input if PY3 else raw_input
+if PY3:
+	import configparser
+	input = input 
+else:
+	import ConfigParser as configparser
+	input = raw_input
+
 
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))

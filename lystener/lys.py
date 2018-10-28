@@ -55,10 +55,9 @@ def _endpoints(value):
 	elif isinstance(value, str):
 		result = value.split(",")
 	else:
-		return False
+		return []
 
-	result = [url for url in result if valid_url.match(url)]
-	return False if not len(result) else result
+	return = [url for url in result if valid_url.match(url)]
 
 def start_listening(args={}, **options):
 	# persistent options effect
