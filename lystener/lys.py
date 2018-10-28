@@ -14,7 +14,7 @@ Options:
 -v --value=<value>         : the value triggering the webhook
 -l --listener=<listener>   : the peer receiving whebhook POST request
 -w --webhook=<webhook>     : the peer registering the webhook
--e --endpoints=<endpoints> : the end points where to broadcast event
+-e --endpoints=<endpoints> : the end points where to broadcast event (UNTESTED)
 -i --ip=<ip>               : the ip used for listening server   [default: 0.0.0.0]
 -p --port=<port>           : the port used for listening server [default: 5001]
 
