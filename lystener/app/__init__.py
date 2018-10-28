@@ -36,7 +36,7 @@ app.config.update(
 app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
-# pass
+# load listener.ini config file if found
 app.config.ini = configparser.ConfigParser(allow_no_value=True)
 inifile = os.path.join(lystener.DATA, "listener.ini")
 if os.path.exists(inifile):
@@ -70,18 +70,22 @@ def execute(module, name):
 		raw = flask.request.data
 		data = json.loads(raw).get("data", False)
 		path_module = "%s.%s" % (module, name)
-		autorization = flask.request.headers.get("Authorization", "")
+		autorization = flask.request.headers.get("Authorization", "?")
 
-		print("%r"%data)
 		# check the data sent by webhook
+		# TESTED --> OK
 		if not data:
 			logMsg("no data provided")
 			return json.dumps({"success": False, "message": "no data provided"})
 
 		# check autorization and exit if bad one
+		# TESTED --> OK
 		webhook = loadJson("%s.json" % path_module)
-		if not webhook.get("token", "").startswith(autorization) and \
-		   not app.config.ini.get("Autorization", autorization, fallback=False):
+		if app.config.ini.has_section("Autorizations"):
+			ini_autorizations = app.config.ini.options("Autorizations")
+		if autorization == "?" or \
+		   not webhook.get("token", "").startswith(autorization) and \
+		   autorization not in ini_autorizations:
 			logMsg("not autorized here")
 			return json.dumps({"success": False, "message": "not autorized here"})
 
@@ -104,6 +108,7 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
+		### NEED PRODUCER CONSMER PATTERN
 		# # act as a hub endpoints list found
 		# endpoints = webhook.get("hub", [])
 		# # or if config file has a [Hub] section
@@ -124,8 +129,12 @@ def execute(module, name):
 		# 	# so exit here
 		# 	return json.dumps({"success": True, "message": msg})
 
-		# import asked module
+
+		### NEED PRODUCER CONSMER PATTERN ALSO
+		### if the python code takes too long to execute...
+		### connection will be broken
 		try:
+			# import asked module
 			obj = import_module("lystener." + module)
 		except ImportError as error:
 			msg = "%r\ncan not import python element %s" % (error, module)
@@ -174,12 +183,12 @@ def connect():
 	return getattr(flask.g, "database").cursor()
 
 
-# css reload bugfix...
-
+########################
+# css reload bugfix... #
+########################
 @app.context_processor
 def override_url_for():
 	return dict(url_for=dated_url_for)
-
 
 def dated_url_for(endpoint, **values):
 	if endpoint == 'static':
@@ -188,3 +197,4 @@ def dated_url_for(endpoint, **values):
 			file_path = os.path.join(app.root_path, endpoint, filename)
 			values["q"] = int(os.stat(file_path).st_mtime)
 	return flask.url_for(endpoint, **values)
+########################
