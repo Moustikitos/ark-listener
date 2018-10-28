@@ -31,8 +31,8 @@ import requests
 import lystener
 
 # default peer configuration
-LISTENER_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 5001}
-WEBHOOK_PEER = {"protocol": "http", "ip": "127.0.0.1", "port": 4004}
+LISTENER_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 5001}
+WEBHOOK_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 4004}
 # global var used by REST requests
 HEADERS = {"Content-Type": "application/json"}
 TIMEOUT = 7
@@ -60,7 +60,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _GET(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(protocol)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
 		try:
 			req = requests.get(
 				peer + "/".join(args),
@@ -76,7 +76,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _POST(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(protocol)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
 		try:
 			req = requests.post(
 				peer + "/".join(args),
@@ -92,7 +92,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _PUT(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(protocol)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
 		try:
 			req = requests.put(
 				peer + "/".join(args),
@@ -108,7 +108,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _DELETE(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(protocol)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
 		try:
 			req = requests.delete(
 				peer + "/".join(args),

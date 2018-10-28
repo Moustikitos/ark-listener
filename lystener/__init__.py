@@ -6,6 +6,7 @@ import re
 import sys
 import imp
 import json
+import sqlite3
 import datetime
 
 # save python familly
@@ -71,7 +72,7 @@ def dumpEnv(env, pathname):
 			environ.write(b"%s=%s\n" % (key, value))
 
 
-def logMsg(msg, logname=None):
+def logMsg(msg, logname=None, dated=False):
 	if logname:
 		logfile = os.path.join(LOG, logname)
 		try:
@@ -81,9 +82,14 @@ def logMsg(msg, logname=None):
 		stdout = io.open(logfile, "a")
 	else:
 		stdout = sys.stdout
-	stdout.write(">>> [%s] %s\n" % (datetime.datetime.now().strftime("%x %X"), msg))
+
+	stdout.write(
+		">>> " + \
+		("[%s] " % datetime.datetime.now().strftime("%x %X") if dated else "") + \
+		"%s\n" % msg
+	)
 	stdout.flush()
-	
+
 	if logname:
 		return stdout.close()
 
@@ -114,4 +120,17 @@ def chooseItem(msg, *elem):
 	else:
 		sys.stdout.write("Nothing to choose...\n")
 		return False
+
+
+def initDB():
+	database = os.path.join(DATA, "database.db")
+	if not os.path.exists(database):
+		os.makedirs(DATA)
+	sqlite = sqlite3.connect(database)
+	cursor = sqlite.cursor()
+	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
+	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
+	sqlite.row_factory = sqlite3.Row
+	sqlite.commit()
+	return sqlite
 

@@ -3,7 +3,7 @@
 
 """
 Usage:
-   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
+   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook> -e <endpoints>]
    lys destroy-listener [<function>]
    lys start-listening [-i <ip> -p <port>]
    lys stop-listening
@@ -14,6 +14,7 @@ Options:
 -v --value=<value>         : the value triggering the webhook
 -l --listener=<listener>   : the peer receiving whebhook POST request
 -w --webhook=<webhook>     : the peer registering the webhook
+-e --endpoints=<endpoints> : the end points where to broadcast event
 -i --ip=<ip>               : the ip used for listening server   [default: 0.0.0.0]
 -p --port=<port>           : the port used for listening server [default: 5001]
 
@@ -25,6 +26,7 @@ Subcommands:
 """
 
 import os
+import re
 import sys
 import docopt
 
@@ -34,8 +36,29 @@ sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import lystener
-from lystener import rest
+from lystener import rest, initDB
 
+
+def _endpoints(value):
+	# https://github.com/django/django/blob/master/django/core/validators.py#L74
+	valid_url = re.compile(
+		r'^https?://'  # http:// or https://
+		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+		r'localhost|'  # localhost...
+		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+		r'(?::\d+)?'  # optional port
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+	if os.path.exists(value):
+		with io.open(value, "r") as data:
+			result = [addr.strip() for addr in data.read().split("\n").split(",")]
+	elif isinstance(value, str):
+		result = value.split(",")
+	else:
+		return False
+
+	result = [url for url in result if valid_url.match(url)]
+	return False if not len(result) else result
 
 def start_listening(args={}, **options):
 	# persistent options effect
@@ -78,8 +101,8 @@ def deploy_listener(args={}, **options):
 	json_name = "%s.json" % function
 
 	# build peers and target url
-	webhook_peer = options.get("webhook", "%(protocol)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
-	listener_peer = options.get("listener", "%(protocol)s://%(ip)s:%(port)s" % rest.LISTENER_PEER)
+	webhook_peer = options.get("webhook", "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
+	listener_peer = options.get("listener", "%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER)
 	target_url = listener_peer +"/"+ function.replace(".", "/")
 
 	# compute listener condition
@@ -98,7 +121,7 @@ def deploy_listener(args={}, **options):
 			"condition": options["condition"],
 			"value": options["value"]
 		}
-
+	
 	# load webhook configuration if already set
 	webhook = lystener.loadJson(json_name)
 	# lystener.loadJson returns void dict if json_name not found,
@@ -111,6 +134,7 @@ def deploy_listener(args={}, **options):
 			webhook = req["data"]
 			# save the used peer to be able to delete it later
 			webhook["peer"] = webhook_peer
+			webhook["hub"] = _endpoints(options.get("endpoints", False))
 			# save webhook configuration in JSON folder
 			lystener.dumpJson(webhook, json_name)
 			lystener.logMsg("%s webhook set" % function)
@@ -125,6 +149,8 @@ def destroy_listener(args={}, **options):
 	"""
 	unlink ark blockchain event from a python function.
 	"""
+	sqlite = initDB()
+	cursor = sqlite.cursor()
 
 	function = args.get("<function>", options.get("function", False))
 
@@ -142,9 +168,13 @@ def destroy_listener(args={}, **options):
 		rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
 		# delete the webhook configuration
 		os.remove(os.path.join(lystener.JSON, json_name))
+		cursor.execute("SELECT FROM history WHERE autorization = ?", (webhook["token"][:32],)).fetchall()
 		lystener.logMsg("%s webhook destroyed" % function)
 	else:
 		lystener.logMsg("%s webhook not found" % function)
+
+	sqlite.commit()
+	sqlite.close()
 
 
 # command line execution
