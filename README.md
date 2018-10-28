@@ -105,20 +105,48 @@ ark-core-relay instance have to be running on the node then.
 {
   "amount": 100000000,
   "asset": {},
-  "fee": 5128149,
-  "id": "79af5a0fa8ffdc166a3fceb4ae6fd4d80e53e57db2bb0eed849979fe45693bf2",
-  "recipientId": "DGuuCwJYoEheBAC4PZTBSBasaDHxg2e6j7",
+  "fee": 10000000,
+  "id": "3a070fcd16ae0e6214df9ea209e3091ee751808016bef5eca0e16453931be1f9",
+  "recipientId": "DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq",
   "senderId": "D7seWn8JLVwX4nHd9hh2Lf7gvZNiRJ7qLk",
   "senderPublicKey": "03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933",
-  "signSignature": "304402200d89ce33ffe5a89b70cec179ca80541380cd1e3b2c7332b6f69dd36f315ce5ba022022969c81184a1f8051b846bd8d41daafc92959229736dc6cb3a79995e92a95d3",
-  "signature": "30450221008f19ec684b890464da23f18bcc741a1f5b46bb4a6b130c8b1d3c0078e2e89a7002207283460aa9ac1f0eb2ddf195a8f3ede6c7de4053652df76528322f608d0d2640",
-  "timestamp": 50540092,
+  "signSignature": "304402204c23a6275b8ab56a5c77b10fe17036dc664ffda587f8a0356011676758ecc26602207af61465756c87f462afc568627051dedee67d9c74489684c4d64ea802a34f13",
+  "signature": "3045022100a75fd350967e7524dc9fb66a490e814a408c79f8a3d44fe75f71299f8c6b65af02207313dd3f33d83700ad32a89d3de506e64cd81472c9b60e46b67f4d66c28117b3",
+  "timestamp": 50645384,
   "type": 0,
-  "vendorField": "sc:ins:PolicyPaymentTransaction:2345"
+  "vendorField": "sc:ins:PolicyPaymentTransaction:0123"
 }
 ```
 ```
-2018-10-27 11:56 +00:00: >>> Transaction sent to hyperledger...
-2018-10-27 11:56 +00:00: >>> [10/27/18 11:56:42] executeInsurancePolicy response:
-2018-10-27 11:56 +00:00: ConnectionError(MaxRetryError("HTTPConnectionPool(host='159.89.146.143', port=3000): Max retries exceeded with url: /api/PolicyPaymentTransaction (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f30a680c050>: Failed to establish a new connection: [Errno 111] Connection refused',))",),)
+2018-10-28 17:30 +00:00: Sending content to http://159.89.146.143:3000/api/PolicyPaymentTransaction: {
+2018-10-28 17:30 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
+2018-10-28 17:30 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
+2018-10-28 17:30 +00:00:   "amountPaid": 100000000, 
+2018-10-28 17:30 +00:00:   "arkTransaction": {
+2018-10-28 17:30 +00:00:     "signSignature": "3044022019bcd27d01b6223692f55e89989a63fdca64036ca7353bc0d4f77cde418763e30220604d8cd5fce89a1cba224526ea6ccfd7ac5f3eefff4a746df16cf6fd69832e65", 
+2018-10-28 17:30 +00:00:     "fee": "10000000", 
+2018-10-28 17:30 +00:00:     "network": 30, 
+2018-10-28 17:30 +00:00:     "timestamp": 50646617, 
+2018-10-28 17:30 +00:00:     "signature": "304302204a7cdf0aba4e03bcc4a609fd394834c7c4b6d970f0c52a7c1bddd38b94e100d2021f2a37cd38635e2ab4207cb3d22b55803553a955ed8318e006d6a04c954d4a06", 
+2018-10-28 17:30 +00:00:     "recipientId": "DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq", 
+2018-10-28 17:30 +00:00:     "senderPublicKey": "03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933", 
+2018-10-28 17:30 +00:00:     "vendorField": "sc:ins:PolicyPaymentTransaction:0123", 
+2018-10-28 17:30 +00:00:     "amount": "100000000", 
+2018-10-28 17:30 +00:00:     "version": 1, 
+2018-10-28 17:30 +00:00:     "expiration": 0, 
+2018-10-28 17:30 +00:00:     "vendorFieldHex": "73633a696e733a506f6c6963795061796d656e745472616e73616374696f6e3a30313233", 
+2018-10-28 17:30 +00:00:     "id": "aede05e3113722f52c59f7456838e8ccc16d69f8e3467e325adf52a423f1a517", 
+2018-10-28 17:30 +00:00:     "type": 0, 
+2018-10-28 17:30 +00:00:     "secondSignature": "3044022019bcd27d01b6223692f55e89989a63fdca64036ca7353bc0d4f77cde418763e30220604d8cd5fce89a1cba224526ea6ccfd7ac5f3eefff4a746df16cf6fd69832e65"
+2018-10-28 17:30 +00:00:   }
+2018-10-28 17:30 +00:00: }
+2018-10-28 17:30 +00:00: >>> Transaction sent to hyperledger...
+2018-10-28 17:30 +00:00: >>> executeInsurancePolicy response:
+2018-10-28 17:30 +00:00: {
+2018-10-28 17:30 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
+2018-10-28 17:30 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
+2018-10-28 17:30 +00:00:   "amountPaid": "100000000", 
+2018-10-28 17:30 +00:00:   "transactionId": "a3e7f5186ff8b049758fa91a2438da71b151c554b91f111411e50764a6b0e974", 
+2018-10-28 17:30 +00:00:   "arkTransaction": "[object Object]"
+2018-10-28 17:30 +00:00: }
 ```
