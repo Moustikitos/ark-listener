@@ -7,10 +7,9 @@ import imp
 import json
 import flask
 import hashlib
-
-
 import requests
 import lystener
+
 from collections import OrderedDict
 from importlib import import_module
 from lystener import logMsg, loadJson, initDB, configparser
@@ -32,7 +31,7 @@ app.config.update(
 	# 
 	TEMPLATES_AUTO_RELOAD = True
 )
-# redirect commn http errors to index
+# redirect common http errors to index
 app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
@@ -74,10 +73,7 @@ def index():
 def execute(module, name):
 
 	if flask.request.method == "POST":
-		raw = flask.request.data
-		data = json.loads(raw).get("data", False)
-		path_module = "%s.%s" % (module, name)
-		autorization = flask.request.headers.get("Authorization", "?")
+		data = json.loads(flask.request.data).get("data", False)
 
 		# check the data sent by webhook
 		# TESTED --> OK
@@ -87,16 +83,19 @@ def execute(module, name):
 
 		# check autorization and exit if bad one
 		# TESTED --> OK
-		webhook = loadJson("%s.json" % path_module)
+		autorization = flask.request.headers.get("Authorization", "?")
+		webhook = loadJson("%s.%s.json" % (module, name))
 		if app.config.ini.has_section("Autorizations"):
 			ini_autorizations = app.config.ini.options("Autorizations")
-		if autorization == "?" or \
-		   not webhook.get("token", "").startswith(autorization) and \
-		   autorization not in ini_autorizations:
+		if autorization == "?" or (
+				not webhook.get("token", "").startswith(autorization) and \
+				autorization not in ini_autorizations
+			):
 			logMsg("not autorized here")
 			return json.dumps({"success": False, "message": "not autorized here"})
 
 		# use sqlite database to check if data already parsed once
+		# TESTED --> OK
 		cursor = connect()
 		signature = data.get("signature", False)
 		if not signature:
@@ -116,6 +115,7 @@ def execute(module, name):
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
 		### NEED PRODUCER CONSMER PATTERN
+		### TESTED
 		# # act as a hub endpoints list found
 		# endpoints = webhook.get("hub", [])
 		# # or if config file has a [Hub] section
@@ -140,6 +140,7 @@ def execute(module, name):
 		### NEED PRODUCER CONSMER PATTERN ALSO
 		### if the python code takes too long to execute...
 		### connection will be broken
+		# TESTED --> OK
 		try:
 			# import asked module
 			obj = import_module("lystener." + module)
