@@ -7,12 +7,12 @@ import imp
 import json
 import flask
 import hashlib
-import sqlite3
 
+import requests
 import lystener
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson
+from lystener import logMsg, loadJson, initDB
 
 
 # create the application instance 
@@ -44,18 +44,19 @@ def index():
 		json_list = []
 	cursor = connect()
 	return flask.render_template("listener.html",
-		counts=dict(cursor.execute("SELECT module, count(*) FROM history GROUP BY module").fetchall()),
+		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY module").fetchall()),
 		webhooks=json_list
 	)
 
 
-@app.route("/<module>/<name>", methods=["POST", "GET"])
+@app.route("/<module>/<name>", methods=["POST"])
 def execute(module, name):
 
 	if flask.request.method == "POST":
 		raw = flask.request.data
 		data = json.loads(raw).get("data", False)
 		path_module = "%s.%s" % (module, name)
+		autorization = flask.request.headers["Authorization"]
 
 		# check the data sent by webhook
 		if not data:
@@ -64,27 +65,46 @@ def execute(module, name):
 
 		# check autorization and exit if bad one
 		webhook = loadJson("%s.json" % path_module)
-		if not webhook.get("token", "").startswith(flask.request.headers["Authorization"]):
+		if not webhook.get("token", "").startswith(autorization):
 			logMsg("not autorized here")
 			return json.dumps({"success": False, "message": "not autorized here"})
 
 		# use sqlite database to check if data already parsed once
 		cursor = connect()
-		if "signature" in data:
-			signature = data["signature"]
-		else:
-			# remove all trailling spaces, new lines, tabs etc...
+		signature = data.get("signature", False)
+		if not signature:
+			# remove all trailing spaces, new lines, tabs etc...
+			# and generate sha 256 hash as signature
 			raw = re.sub(r"[\s]*", "", sameDataSort(data))
 			h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 			signature = h.decode() if isinstance(h, bytes) else h
+		# check if signature already in database
 		cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
 		if cursor.fetchone()[0] == 0:
-			# insert signature
-			cursor.execute("INSERT OR REPLACE INTO history(signature, module) VALUES(?,?);", (signature, path_module))
+			# insert signature if no one found in database
+			cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (signature, autorizations))
 		else:
+			# exit if signature found in database
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
+		# act as a hub if asked
+		if webhook.get("hub", False):
+			result = dict(zip(
+				webhook["hub"],
+				[requests.post(
+					endpoint,
+					data=flask.request.data,
+					headers=flask.request.headers,
+					timeout=rest.TIMEOUT
+					verify=True).text for endpoint in webhook["hub"]]
+			))
+			msg = "event broadcasted to hub :\n%s" % json.dumps(result, indent=2))
+			logMsg(msg)
+			# if node is used as a hub... should not have to execute something
+			# so exit here
+			return json.dumps({"success": True, "message": msg})
+
 		# import asked module
 		try:
 			obj = import_module("lystener." + module)
@@ -103,12 +123,11 @@ def execute(module, name):
 			logMsg(msg)
 			return json.dumps({"success": False, "message": msg})
 
-		# remove the module so if it is modified it will be updated
+		# remove the module so if code is modified it will be updated without
+		# a listener restart
 		sys.modules.pop(obj.__name__, False)
 		del obj
 		return json.dumps({"success": True, "message": response})
-
-	return flask.redirect(flask.url_for("index"))
 
 
 @app.teardown_appcontext
@@ -118,14 +137,9 @@ def close(*args, **kw):
 		flask.g.database.close()
 
 
-@app.context_processor
-def override_url_for():
-	return dict(url_for=dated_url_for)
-
-
 def sameDataSort(data, reverse=False):
-	if isinstance(data, (list, tuple)):
-		return list[sorted(elem, reverse=reverse)]
+	if isinstance(data, (list,tupple)):
+		return sorted(data, reverse=reverse)
 	elif isintace(data, dict):
 		result = OrderedDict()
 		for key,value in sorted([(k,v) for k,v in data.items()], key=lambda e:e[0], reverse=reverse):
@@ -134,23 +148,17 @@ def sameDataSort(data, reverse=False):
 		return data
 
 
-def initDB():
-	database = os.path.join(lystener.DATA, "database.db")
-	if not os.path.exists(database):
-		os.makedirs(lystener.DATA)
-	sqlite = sqlite3.connect(database)
-	cursor = sqlite.cursor()
-	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, module TEXT);")
-	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
-	sqlite.row_factory = sqlite3.Row
-	sqlite.commit()
-	return sqlite
-
-
 def connect():
 	if not hasattr(flask.g, "database"):
 		setattr(flask.g, "database", initDB())
 	return getattr(flask.g, "database").cursor()
+
+
+# css reload bugfix...
+
+@app.context_processor
+def override_url_for():
+	return dict(url_for=dated_url_for)
 
 
 def dated_url_for(endpoint, **values):

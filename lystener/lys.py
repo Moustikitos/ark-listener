@@ -149,7 +149,8 @@ def destroy_listener(args={}, **options):
 	"""
 	unlink ark blockchain event from a python function.
 	"""
-	# # connect to database in order to remove 
+	# maybee not !
+	# # connect to database in order to remove webhook associated data
 	# sqlite = initDB()
 	# cursor = sqlite.cursor()
 

@@ -13,9 +13,10 @@
 		</thead>
 		<tbody>
 	{%- for data in webhooks %}
+		{%- set autorization = data["token"][:32]) %}
 		{%- set action = ".".join(data["target"].split("/")[-2:]) %}
-		<tr>
-			<td><a href="{{data['peer']}}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>
+	<tr>
+			<td><a href="{{ data['peer'] }}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>
 			<td>{{ data["peer"] }}</td>
 			<td>{{ data["event"] }}</td>
 			<td>
@@ -26,7 +27,7 @@
 		{%- endfor %}
 			</td>
 			<td>{{ action }}</td>
-			<td>{{ counts[action] }}</td>
+			<td>{{ counts[autorization] }}</td>
 		</tr>
 	{%- endfor %}
 		</tbody>
