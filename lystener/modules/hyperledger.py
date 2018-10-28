@@ -11,8 +11,8 @@ def executeInsurancePolicy(data):
 
 	body = {
 		"policy": "resource:io.arklabs.InsurancePolicy#" + assetId,
-		"amountPaid": int(data["amount"]),
-		"arkTransaction": data,
+		"amountPaid": data["amount"],
+		"arkTransaction": json.dumps(data),
 		"$class": "io.arklabs." + endpoint
 	}
 

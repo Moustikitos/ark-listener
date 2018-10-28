@@ -106,47 +106,32 @@ ark-core-relay instance have to be running on the node then.
   "amount": 100000000,
   "asset": {},
   "fee": 10000000,
-  "id": "3a070fcd16ae0e6214df9ea209e3091ee751808016bef5eca0e16453931be1f9",
+  "id": "e7c4d70e837df92f90212503c8204e44bc080b3a1ccfe1c923816d4692ce3e31",
   "recipientId": "DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq",
   "senderId": "D7seWn8JLVwX4nHd9hh2Lf7gvZNiRJ7qLk",
   "senderPublicKey": "03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933",
-  "signSignature": "304402204c23a6275b8ab56a5c77b10fe17036dc664ffda587f8a0356011676758ecc26602207af61465756c87f462afc568627051dedee67d9c74489684c4d64ea802a34f13",
-  "signature": "3045022100a75fd350967e7524dc9fb66a490e814a408c79f8a3d44fe75f71299f8c6b65af02207313dd3f33d83700ad32a89d3de506e64cd81472c9b60e46b67f4d66c28117b3",
-  "timestamp": 50645384,
+  "signSignature": "3045022100a83fa3bd7bde02a44594b5c8ed5aa372508b4db360a207066fb7fbab9b22a67802206e6411b583b26e25d168a2742bf6e2fbf59b15bef9a27de4f7c2afa26a992e08",
+  "signature": "3045022100d8ff38c891f5c3cd2267b6da13000807b38db81074cf15567f1b6a809377ec430220606f2ba1505a822a1946203c3d1a0b34314b34f35612c4bb10813049374eaf3b",
+  "timestamp": 50646949,
   "type": 0,
   "vendorField": "sc:ins:PolicyPaymentTransaction:0123"
 }
 ```
 ```
-2018-10-28 17:30 +00:00: Sending content to http://159.89.146.143:3000/api/PolicyPaymentTransaction: {
-2018-10-28 17:30 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
-2018-10-28 17:30 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
-2018-10-28 17:30 +00:00:   "amountPaid": 100000000, 
-2018-10-28 17:30 +00:00:   "arkTransaction": {
-2018-10-28 17:30 +00:00:     "signSignature": "3044022019bcd27d01b6223692f55e89989a63fdca64036ca7353bc0d4f77cde418763e30220604d8cd5fce89a1cba224526ea6ccfd7ac5f3eefff4a746df16cf6fd69832e65", 
-2018-10-28 17:30 +00:00:     "fee": "10000000", 
-2018-10-28 17:30 +00:00:     "network": 30, 
-2018-10-28 17:30 +00:00:     "timestamp": 50646617, 
-2018-10-28 17:30 +00:00:     "signature": "304302204a7cdf0aba4e03bcc4a609fd394834c7c4b6d970f0c52a7c1bddd38b94e100d2021f2a37cd38635e2ab4207cb3d22b55803553a955ed8318e006d6a04c954d4a06", 
-2018-10-28 17:30 +00:00:     "recipientId": "DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq", 
-2018-10-28 17:30 +00:00:     "senderPublicKey": "03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933", 
-2018-10-28 17:30 +00:00:     "vendorField": "sc:ins:PolicyPaymentTransaction:0123", 
-2018-10-28 17:30 +00:00:     "amount": "100000000", 
-2018-10-28 17:30 +00:00:     "version": 1, 
-2018-10-28 17:30 +00:00:     "expiration": 0, 
-2018-10-28 17:30 +00:00:     "vendorFieldHex": "73633a696e733a506f6c6963795061796d656e745472616e73616374696f6e3a30313233", 
-2018-10-28 17:30 +00:00:     "id": "aede05e3113722f52c59f7456838e8ccc16d69f8e3467e325adf52a423f1a517", 
-2018-10-28 17:30 +00:00:     "type": 0, 
-2018-10-28 17:30 +00:00:     "secondSignature": "3044022019bcd27d01b6223692f55e89989a63fdca64036ca7353bc0d4f77cde418763e30220604d8cd5fce89a1cba224526ea6ccfd7ac5f3eefff4a746df16cf6fd69832e65"
-2018-10-28 17:30 +00:00:   }
-2018-10-28 17:30 +00:00: }
-2018-10-28 17:30 +00:00: >>> Transaction sent to hyperledger...
-2018-10-28 17:30 +00:00: >>> executeInsurancePolicy response:
-2018-10-28 17:30 +00:00: {
-2018-10-28 17:30 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
-2018-10-28 17:30 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
-2018-10-28 17:30 +00:00:   "amountPaid": "100000000", 
-2018-10-28 17:30 +00:00:   "transactionId": "a3e7f5186ff8b049758fa91a2438da71b151c554b91f111411e50764a6b0e974", 
-2018-10-28 17:30 +00:00:   "arkTransaction": "[object Object]"
-2018-10-28 17:30 +00:00: }
+2018-10-28 17:36 +00:00: Sending content to http://159.89.146.143:3000/api/PolicyPaymentTransaction: {
+2018-10-28 17:36 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
+2018-10-28 17:36 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
+2018-10-28 17:36 +00:00:   "amountPaid": "100000000", 
+2018-10-28 17:36 +00:00:   "arkTransaction": "{\"signSignature\": \"3045022100a83fa3bd7bde02a44594b5c8ed5aa372508b4db360a207066fb7fbab9b22a67802206e6411b583b26e25d168a2742bf6e2fbf59b15bef9a27de4f7c2afa26a992e08\", \"fee\": \"10000000\", \"network\": 30, \"timestamp\": 50646949, \"signature\": \"3045022100d8ff38c891f5c3cd2267b6da13000807b38db81074cf15567f1b6a809377ec430220606f2ba1505a822a1946203c3d1a0b34314b34f35612c4bb10813049374eaf3b\", \"recipientId\": \"DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq\", \"senderPublicKey\": \"03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933\", \"vendorField\": \"sc:ins:PolicyPaymentTransaction:0123\", \"amount\": \"100000000\", \"version\": 1, \"expiration\": 0, \"vendorFieldHex\": \"73633a696e733a506f6c6963795061796d656e745472616e73616374696f6e3a30313233\", \"id\": \"e7c4d70e837df92f90212503c8204e44bc080b3a1ccfe1c923816d4692ce3e31\", \"type\": 0, \"secondSignature\": \"3045022100a83fa3bd7bde02a44594b5c8ed5aa372508b4db360a207066fb7fbab9b22a67802206e6411b583b26e25d168a2742bf6e2fbf59b15bef9a27de4f7c2afa26a992e08\"}"
+2018-10-28 17:36 +00:00: }
+2018-10-28 17:36 +00:00: >>> Transaction sent to hyperledger...
+2018-10-28 17:36 +00:00: >>> executeInsurancePolicy response:
+2018-10-28 17:36 +00:00: {
+2018-10-28 17:36 +00:00:   "policy": "resource:io.arklabs.InsurancePolicy#0123", 
+2018-10-28 17:36 +00:00:   "$class": "io.arklabs.PolicyPaymentTransaction", 
+2018-10-28 17:36 +00:00:   "amountPaid": "100000000", 
+2018-10-28 17:36 +00:00:   "transactionId": "e68e87b897618b7008f110e145ef2ff48687a9da783dbb82884ed2574c46ca2a", 
+2018-10-28 17:36 +00:00:   "arkTransaction": "{\"signSignature\": \"3045022100a83fa3bd7bde02a44594b5c8ed5aa372508b4db360a207066fb7fbab9b22a67802206e6411b583b26e25d168a2742bf6e2fbf59b15bef9a27de4f7c2afa26a992e08\", \"fee\": \"10000000\", \"network\": 30, \"timestamp\": 50646949, \"signature\": \"3045022100d8ff38c891f5c3cd2267b6da13000807b38db81074cf15567f1b6a809377ec430220606f2ba1505a822a1946203c3d1a0b34314b34f35612c4bb10813049374eaf3b\", \"recipientId\": \"DFyUhQW52sNB5PZdS7VD9HknwYrSNHPQDq\", \"senderPublicKey\": \"03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933\", \"vendorField\": \"sc:ins:PolicyPaymentTransaction:0123\", \"amount\": \"100000000\", \"version\": 1, \"expiration\": 0, \"vendorFieldHex\": \"73633a696e733a506f6c6963795061796d656e745472616e73616374696f6e3a30313233\", \"id\": \"e7c4d70e837df92f90212503c8204e44bc080b3a1ccfe1c923816d4692ce3e31\", \"type\": 0, \"secondSignature\": \"3045022100a83fa3bd7bde02a44594b5c8ed5aa372508b4db360a207066fb7fbab9b22a67802206e6411b583b26e25d168a2742bf6e2fbf59b15bef9a27de4f7c2afa26a992e08\"}"
+2018-10-28 17:36 +00:00: }
+
 ```
