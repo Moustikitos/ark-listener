@@ -167,12 +167,16 @@ def execute(module, name):
 			### connection will be broken
 			### push to FIFO1 (func, data)
 			### get from FIFO2 with 10s timeout
-			JOB_QUEUE.put((func, data))
-			try:
-				msg = RESPONSE_QUEUE.get(timeout=5)
-			except queue.Empty:
-				msg = "%s.%s response time reached..." % (module, name)
-				logMsg(msg)
+			# JOB_QUEUE.put((func, data))
+			# try:
+			# 	msg = RESPONSE_QUEUE.get(timeout=5)
+			# 	logMsg("%s response:\n%s" % (func.__name__, msg))
+			# except queue.Empty:
+			# 	msg = "%s.%s response time reached..." % (module, name)
+			# 	logMsg(msg)
+
+			response = func(data)
+			logMsg("%s response:\n%s" % (name, response))
 		else:
 			msg = "python definition %s not found in %s" % (name, module)
 			logMsg(msg)
@@ -182,7 +186,7 @@ def execute(module, name):
 		# a listener restart
 		sys.modules.pop(obj.__name__, False)
 		del obj
-		return json.dumps({"success": True, "message": msg})
+		return json.dumps({"success": True, "message": response})
 
 
 @app.teardown_appcontext
