@@ -53,7 +53,7 @@ if os.path.exists(inifile):
 	app.config.ini.read(inifile)
 
 
-class TaskManager(threading.thread):
+class TaskManager(threading.Thread):
 
 	def start(self, *args, **kwargs):
 		while True:
