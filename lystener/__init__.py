@@ -125,7 +125,7 @@ def chooseItem(msg, *elem):
 
 def initDB():
 	database = os.path.join(DATA, "database.db")
-	if not os.path.exists(database):
+	if not os.path.exists(DATA):
 		os.makedirs(DATA)
 	sqlite = sqlite3.connect(database)
 	cursor = sqlite.cursor()

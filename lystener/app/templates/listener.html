@@ -13,7 +13,7 @@
 		</thead>
 		<tbody>
 	{%- for data in webhooks %}
-		{%- set autorization = data["token"][:32]) %}
+		{%- set autorization = data["token"][:32] %}
 		{%- set action = ".".join(data["target"].split("/")[-2:]) %}
 	<tr>
 			<td><a href="{{ data['peer'] }}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>

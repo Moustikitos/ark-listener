@@ -44,7 +44,7 @@ def index():
 		json_list = []
 	cursor = connect()
 	return flask.render_template("listener.html",
-		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY module").fetchall()),
+		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
 		webhooks=json_list
 	)
 
@@ -96,10 +96,10 @@ def execute(module, name):
 					endpoint,
 					data=flask.request.data,
 					headers=flask.request.headers,
-					timeout=rest.TIMEOUT
+					timeout=rest.TIMEOUT,
 					verify=True).text for endpoint in webhook["hub"]]
 			))
-			msg = "event broadcasted to hub :\n%s" % json.dumps(result, indent=2))
+			msg = "event broadcasted to hub :\n%s" % json.dumps(result, indent=2)
 			logMsg(msg)
 			# if node is used as a hub... should not have to execute something
 			# so exit here
