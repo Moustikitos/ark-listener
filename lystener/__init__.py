@@ -13,8 +13,10 @@ import datetime
 PY3 = True if sys.version_info[0] >= 3 else False
 if PY3:
 	import configparser
+	import queue
 	input = input 
 else:
+	import Queue as queue
 	import ConfigParser as configparser
 	input = raw_input
 

@@ -57,7 +57,7 @@ def _endpoints(value):
 	else:
 		return []
 
-	return = [url for url in result if valid_url.match(url)]
+	return [url for url in result if valid_url.match(url)]
 
 def start_listening(args={}, **options):
 	# persistent options effect
@@ -133,7 +133,7 @@ def deploy_listener(args={}, **options):
 			webhook = req["data"]
 			# save the used peer to be able to delete it later
 			webhook["peer"] = webhook_peer
-			webhook["hub"] = _endpoints(options.get("endpoints", False))
+			webhook["hub"] = _endpoints(options.get("endpoints", ""))
 			# save webhook configuration in JSON folder
 			lystener.dumpJson(webhook, json_name)
 			lystener.logMsg("%s webhook set" % function)

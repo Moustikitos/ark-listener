@@ -9,10 +9,14 @@ import flask
 import hashlib
 import requests
 import lystener
+import threading
 
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson, initDB, configparser
+from lystener import logMsg, loadJson, initDB, configparser, queue
+
+JOB_QUEUE = queue.Queue()
+RESPONSE_QUEUE = queue.Queue()
 
 
 # create the application instance 
@@ -47,6 +51,19 @@ app.config.ini = configparser.ConfigParser(allow_no_value=True)
 inifile = os.path.join(lystener.DATA, "listener.ini")
 if os.path.exists(inifile):
 	app.config.ini.read(inifile)
+
+
+class TaskManager(threading.thread):
+
+	def start(self, *args, **kwargs):
+		while True:
+			func, data = JOB_QUEUE.get()
+			try:
+				resp = {"success": True, "message": func(data)}
+			except Exception as error:
+				resp = {"except": True, "error": "%r" % error}
+			logMsg("%s response:\n%s" % (func.__name__, resp))
+			RESPONSE_QUEUE.put(resp)
 
 
 @app.route("/")
@@ -134,11 +151,6 @@ def execute(module, name):
 		# 	# so exit here
 		# 	return json.dumps({"success": True, "message": msg})
 
-
-		### NEED PRODUCER CONSMER PATTERN ALSO
-		### if the python code takes too long to execute...
-		### connection will be broken
-		# TESTED --> OK
 		try:
 			# import asked module
 			obj = import_module("lystener." + module)
@@ -150,8 +162,17 @@ def execute(module, name):
 		# get asked function and execute with data provided by webhook
 		func = getattr(obj, name, False)
 		if func:
-			response = func(data)
-			logMsg("%s response:\n%s" % (name, response))
+			### NEED PRODUCER CONSMER PATTERN MAYBE...
+			### if the python code takes too long,
+			### connection will be broken
+			### push to FIFO1 (func, data)
+			### get from FIFO2 with 10s timeout
+			JOB_QUEUE.put((func, data))
+			try:
+				msg = RESPONSE_QUEUE.get(timeout=5)
+			except queue.Empty:
+				msg = "%s.%s response time reached..." % (module, name)
+				logMsg(msg)
 		else:
 			msg = "python definition %s not found in %s" % (name, module)
 			logMsg(msg)
@@ -161,7 +182,7 @@ def execute(module, name):
 		# a listener restart
 		sys.modules.pop(obj.__name__, False)
 		del obj
-		return json.dumps({"success": True, "message": response})
+		return json.dumps({"success": True, "message": msg})
 
 
 @app.teardown_appcontext
