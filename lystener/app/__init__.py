@@ -85,12 +85,10 @@ def execute(module, name):
 		# TESTED --> OK
 		autorization = flask.request.headers.get("Authorization", "?")
 		webhook = loadJson("%s.%s.json" % (module, name))
+		half_token = webhook.get("token", 32*" ")[:32]
 		if app.config.ini.has_section("Autorizations"):
 			ini_autorizations = app.config.ini.options("Autorizations")
-		if autorization == "?" or (
-				not webhook.get("token", "").startswith(autorization) and \
-				autorization not in ini_autorizations
-			):
+		if autorization == "?" or (half_token != autorization and autorization not in ini_autorizations):
 			logMsg("not autorized here")
 			return json.dumps({"success": False, "message": "not autorized here"})
 
