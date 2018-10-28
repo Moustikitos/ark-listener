@@ -11,20 +11,21 @@ def executeInsurancePolicy(data):
 
 	body = {
 		"policy": "resource:io.arklabs.InsurancePolicy#" + assetId,
-		"amountPaid": data["amount"],
-		"arkTransaction": json.dumps(data, indent=5),
+		"amountPaid": int(data["amount"]),
+		"arkTransaction": data,
 		"$class": "io.arklabs." + endpoint
 	}
 
 	headers = {
           "Content-Type": "application/json",
-          "os": "linux3.2.0-4-amd64",
-          "version": "0.3.0",
-          "port": "3000"
 	}
 
 	# POST body to http://159.89.146.143:3000/api/endpoint using requests
 	try: 
+		sys.stdout.write('Sending content to %s: %s\n' % (
+			"http://159.89.146.143:3000/api/"+endpoint,
+			json.dumps(body, indent=2)
+		))
 		result = requests.post(
 			"http://159.89.146.143:3000/api/"+endpoint,
 			data=json.dumps(body),
@@ -32,9 +33,9 @@ def executeInsurancePolicy(data):
 			verify=True
 		)
 		msg = json.dumps(result.json(), indent=2)
+		sys.stdout.write('>>> Transaction sent to hyperledger...\n')
 	except Exception as error:
 		msg = "%r" % error
-	sys.stdout.write('>>> Transaction sent to hyperledger...\n')
 	sys.stdout.flush()
 	
 	return msg
