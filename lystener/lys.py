@@ -62,7 +62,7 @@ def _endpoints(value):
 
 def start_listening(args={}, **options):
 	# persistent options effect
-	# modifying the pm2 app.json configuration 
+	# modifying the pm2 app.json configuration
 	app_folder = os.path.abspath(os.path.dirname(lystener.__path__[0]))
 	app = lystener.loadJson("app.json", folder=app_folder)
 	app["apps"][0]["args"] = " ".join(["--{0:s}={1:s}".format(*item) for item in options.items()])
@@ -149,8 +149,9 @@ def destroy_listener(args={}, **options):
 	"""
 	unlink ark blockchain event from a python function.
 	"""
-	sqlite = initDB()
-	cursor = sqlite.cursor()
+	# # connect to database in order to remove 
+	# sqlite = initDB()
+	# cursor = sqlite.cursor()
 
 	function = args.get("<function>", options.get("function", False))
 
@@ -168,13 +169,13 @@ def destroy_listener(args={}, **options):
 		rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
 		# delete the webhook configuration
 		os.remove(os.path.join(lystener.JSON, json_name))
-		cursor.execute("SELECT FROM history WHERE autorization = ?", (webhook["token"][:32],)).fetchall()
+		# cursor.execute("SELECT FROM history WHERE autorization = ?", (webhook["token"][:32],)).fetchall()
 		lystener.logMsg("%s webhook destroyed" % function)
 	else:
 		lystener.logMsg("%s webhook not found" % function)
 
-	sqlite.commit()
-	sqlite.close()
+	# sqlite.commit()
+	# sqlite.close()
 
 
 # command line execution
