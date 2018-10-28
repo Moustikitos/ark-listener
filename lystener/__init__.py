@@ -56,29 +56,6 @@ def dumpJson(data, name, folder=None):
 		json.dump(data, out, indent=4)
 
 
-def loadEnv(pathname):
-	with io.open(pathname, "r") as environ:
-		lines = [l.strip() for l in environ.read().split("\n")]
-	result = {}
-	for line in [l for l in lines if l != ""]:
-		key,value = [l.strip() for l in line.split("=")]
-		try:
-			result[key] = int(value)
-		except:
-			result[key] = value
-	return result
-
-
-def dumpEnv(env, pathname):
-	try:
-		shutil.copy(pathname, pathname+".bak")
-	except:
-		pass
-	with io.open(pathname, "wb") as environ:
-		for key,value in sorted([(k,v) for k,v in env.items()], key=lambda e:e[0]):
-			environ.write(b"%s=%s\n" % (key, value))
-
-
 def logMsg(msg, logname=None, dated=False):
 	if logname:
 		logfile = os.path.join(LOG, logname)

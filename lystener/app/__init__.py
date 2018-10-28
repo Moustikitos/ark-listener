@@ -13,7 +13,7 @@ import requests
 import lystener
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson, initDB, loadEnv, configparser
+from lystener import logMsg, loadJson, initDB, configparser
 
 
 # create the application instance 
@@ -49,10 +49,17 @@ def index():
 		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
 	else:
 		json_list = []
+
+	if app.config.ini.has_section("Autorization"):
+		tiny_list = dict(app.config.ini.items("Autorization", vars={}))
+	else:
+		tiny_list = {}
+	
 	cursor = connect()
 	return flask.render_template("listener.html",
 		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
-		webhooks=json_list
+		webhooks=json_list,
+		tinies=tiny_list
 	)
 
 
@@ -63,8 +70,9 @@ def execute(module, name):
 		raw = flask.request.data
 		data = json.loads(raw).get("data", False)
 		path_module = "%s.%s" % (module, name)
-		autorization = flask.request.headers["Authorization"]
+		autorization = flask.request.headers.get("Authorization", "")
 
+		print("%r"%data)
 		# check the data sent by webhook
 		if not data:
 			logMsg("no data provided")
@@ -83,7 +91,7 @@ def execute(module, name):
 		if not signature:
 			# remove all trailing spaces, new lines, tabs etc...
 			# and generate sha 256 hash as signature
-			raw = re.sub(r"[\s]*", "", sameDataSort(data))
+			raw = re.sub(r"[\s]*", "", json.dumps(sameDataSort(data)))
 			h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 			signature = h.decode() if isinstance(h, bytes) else h
 		# check if signature already in database
@@ -96,24 +104,25 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
-		# act as a hub if asked
-		endpoints = webhook.get("hub", [])
-		if app.config.ini.has_section("Hub"):
-			endpoints.extend([item[0] for item in app.config.ini.items("Hub", vars={})])
-		if len(endpoints):
-			result = []
-			for endpoint in endpoints:
-				try:
-					req = request.post(endpoint, data=flask.request.data, headers=flask.request.headers, timeout=rest.TIMEOUT, verify=True)
-				except Exception as error:
-					result.append({"success":False,"error":error,"except":True})
-				else:
-					result.append(req.text)
-			msg = "event broadcasted to hub :\n%s" % json.dumps(dic(zip(endpoints, result)), indent=2)
-			logMsg(msg)
-			# if node is used as a hub, should not have to execute something
-			# so exit here
-			return json.dumps({"success": True, "message": msg})
+		# # act as a hub endpoints list found
+		# endpoints = webhook.get("hub", [])
+		# # or if config file has a [Hub] section
+		# if app.config.ini.has_section("Hub"):
+		# 	endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
+		# if len(endpoints):
+		# 	result = []
+		# 	for endpoint in endpoints:
+		# 		try:
+		# 			req = requests.post(endpoint, data=flask.request.data, headers=flask.request.headers, timeout=5, verify=True)
+		# 		except Exception as error:
+		# 			result.append({"success":False,"error":"%r"%error,"except":True})
+		# 		else:
+		# 			result.append(req.text)
+		# 	msg = "event broadcasted to hub :\n%s" % json.dumps(dict(zip(endpoints, result)), indent=2)
+		# 	logMsg(msg)
+		# 	# if node is used as a hub, should not have to execute something
+		# 	# so exit here
+		# 	return json.dumps({"success": True, "message": msg})
 
 		# import asked module
 		try:
@@ -148,12 +157,13 @@ def close(*args, **kw):
 
 
 def sameDataSort(data, reverse=False):
-	if isinstance(data, (list,tupple)):
+	if isinstance(data, (list, tuple)):
 		return sorted(data, reverse=reverse)
-	elif isintace(data, dict):
+	elif isinstance(data, dict):
 		result = OrderedDict()
 		for key,value in sorted([(k,v) for k,v in data.items()], key=lambda e:e[0], reverse=reverse):
 			result[k] = sameDataSort(value, reverse)
+		return result
 	else:
 		return data
 

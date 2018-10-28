@@ -6,7 +6,9 @@
 
 {%- block body %}
 <div class="content">
-<h1>Details</h1>
+	
+<h1>Aware mode</h1>
+
 	<table cellpadding="4" cellspacing="2">
 		<thead>
 			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Conditions</td><td>Python module</td><td>Hits</td></tr>
@@ -15,7 +17,7 @@
 	{%- for data in webhooks %}
 		{%- set autorization = data["token"][:32] %}
 		{%- set action = ".".join(data["target"].split("/")[-2:]) %}
-	<tr>
+		<tr>
 			<td><a href="{{ data['peer'] }}/api/webhooks/{{ data['id'] }}" target="_blank">{{ data["id"] }}</a></td>
 			<td>{{ data["peer"] }}</td>
 			<td>{{ data["event"] }}</td>
@@ -32,5 +34,22 @@
 	{%- endfor %}
 		</tbody>
 	</table>
+
+<h1>Unaware mode</h1>
+
+	<table cellpadding="4" cellspacing="2">
+		<thead>
+			<tr><td>Python module</td><td>Hits</td></tr>
+		</thead>
+		<tbody>
+	{%- for key,value in tinies.items() %}
+		<tr>
+			<td>{{ value }}</td>
+			<td>{{ counts[key] }}</td>
+	{%- endfor %}
+		</tr>
+		</tbody>
+	</table>
+
 </div>
 {%- endblock body %}
