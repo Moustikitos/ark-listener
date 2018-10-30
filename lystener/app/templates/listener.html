@@ -5,13 +5,16 @@
 {%- endblock title %}
 
 {%- block body %}
-<div class="content">
-	
-<h1>Aware mode</h1>
+<div class="container">
 
-	<table cellpadding="4" cellspacing="2">
-		<thead>
-			<tr><td>ID</td><td>Webhook peer</td><td>Blockchain event</td><td>Conditions</td><td>Python module</td><td>Hits</td></tr>
+<h1>Deployed listener</h1>
+
+<h2>Aware mode</h2>
+
+	<div class="table-responsive-xl">
+	<table class="table table-hover table-sm">
+		<thead class="thead-light">
+			<tr><th>ID</th><th>Webhook peer</th><th>Blockchain event</th><th>Conditions</th><th>Python module</th><th>Hits</th></tr>
 		</thead>
 		<tbody>
 	{%- for data in webhooks %}
@@ -34,12 +37,14 @@
 	{%- endfor %}
 		</tbody>
 	</table>
+	</div>
 
-<h1>Unaware mode</h1>
+<h2>Unaware mode</h2>
 
-	<table cellpadding="4" cellspacing="2">
-		<thead>
-			<tr><td>Python module</td><td>Hits</td></tr>
+	<div class="table-responsive-xl">
+	<table class="table table-hover table-sm">
+		<thead class="thead-dark">
+			<tr><th>Python module</th><th>Hits</th></tr>
 		</thead>
 		<tbody>
 	{%- for key,value in tinies.items() %}
@@ -50,6 +55,7 @@
 		</tr>
 		</tbody>
 	</table>
+	</div>
 
 </div>
 {%- endblock body %}
