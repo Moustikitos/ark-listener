@@ -2,6 +2,11 @@
 # © Toons
 
 """
+This module builds RESTFULL objects to call endpoints using python syntax.
+available REST methods : GET, POST, PUT, DELETE.
+
+`peer` is an optional parameter to override the default `rest.LISTENER_PEER`
+
 >>> from lystener import rest
 >>> # 'http://127.0.0.1:4002/api/delegates/get?username=arky'
 >>> rest.GET.api.delegates.get(username="arky")
