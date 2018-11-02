@@ -40,7 +40,7 @@ from lystener import rest, initDB
 
 
 def _endpoints(value):
-	# https://github.com/django/django/blob/master/django/core/validators.py#L74
+
 	valid_url = re.compile(
 		r'^https?://'  # http:// or https://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
@@ -59,9 +59,9 @@ def _endpoints(value):
 
 	return [url for url in result if valid_url.match(url)]
 
+
 def start_listening(args={}, **options):
-	# persistent options effect
-	# modifying the pm2 app.json configuration
+	# persistent options effect modifying the pm2 app.json configuration
 	app_folder = os.path.abspath(os.path.dirname(lystener.__path__[0]))
 	app = lystener.loadJson("app.json", folder=app_folder)
 	app["apps"][0]["args"] = " ".join(["--{0:s}={1:s}".format(*item) for item in options.items()])
@@ -129,7 +129,7 @@ def deploy_listener(args={}, **options):
 		# create the webhook
 		req = rest.POST.api.webhooks(event=event, peer=webhook_peer, target=target_url, conditions=[condition])
 		# parse request result if no error messages
-		if not req.get("error", False):
+		if not req.get("except", False):
 			webhook = req["data"]
 			# save the used peer to be able to delete it later
 			webhook["peer"] = webhook_peer
@@ -165,7 +165,7 @@ def destroy_listener(args={}, **options):
 	webhook = lystener.loadJson(json_name)
 	# condition bellow checks if webhook configurations is found
 	if webhook.get("peer", False):
-		# delete webhook usong its id and parent peer
+		# delete webhook using its id and parent peer
 		rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
 		# delete the webhook configuration
 		os.remove(os.path.join(lystener.JSON, json_name))
