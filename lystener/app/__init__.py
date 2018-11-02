@@ -12,7 +12,7 @@ import lystener
 
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson, initDB, configparser, queue, UrlBroadcaster
+from lystener import logMsg, loadJson, initDB, configparser, UrlBroadcaster
 
 # starting 2 threads 
 DAEMONS = [UrlBroadcaster(), UrlBroadcaster()]
@@ -145,16 +145,17 @@ def execute(module, name):
 		# get asked function and execute with data provided by webhook
 		func = getattr(obj, name, False)
 		if func:
-			### NEED PRODUCER CONSMER PATTERN MAYBE...
+
+			### MAYBE NEED PRODUCER CONSMER PATTERN...
 			### if the python code takes too long,
 			### connection will be broken
 			### push to FIFO1 (func, data)
-			### get from FIFO2 with 10s timeout
+			### get from FIFO2 with 5s timeout
 			# JOB_QUEUE.put((func, data))
 			# try:
 			# 	msg = RESPONSE_QUEUE.get(timeout=5)
 			# 	logMsg("%s response:\n%s" % (func.__name__, msg))
-			# except queue.Empty:
+			# except:
 			# 	msg = "%s.%s response time reached..." % (module, name)
 			# 	logMsg(msg)
 
