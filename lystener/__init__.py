@@ -125,6 +125,12 @@ def initDB():
 class UrlBroadcaster(threading.Thread):
 
 	JOB = queue.Queue()
+	LOCK = threading.Lock()
+	STOP = threading.Event()
+
+	@staticmethod
+	def killall():
+		UrlBroadcaster.STOP.set()
 
 	def __init__(self, *args, **kwargs):
 		threading.Thread.__init__(self)
@@ -132,13 +138,16 @@ class UrlBroadcaster(threading.Thread):
 		self.start()
 
 	def run(self):
-		while True:
+		while not UrlBroadcaster.STOP.is_set():
 			endpoint, data, headers = UrlBroadcaster.JOB.get()
 			try:
 				requests.post(endpoint, data=data, headers=headers, timeout=5, verify=True)
 			except Exception as error:
+				UrlBroadcaster.LOCK.aquire()
 				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":False,"error":"%r"%error,"except":True}, indent=2))
 			else:
+				UrlBroadcaster.LOCK.aquire()
 				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":True}, indent=2))
-
+			finally:
+				UrlBroadcaster.LOCK.release()
 
