@@ -9,18 +9,16 @@ import flask
 import hashlib
 import requests
 import lystener
-import threading
 
 from collections import OrderedDict
 from importlib import import_module
-from lystener import logMsg, loadJson, initDB, configparser, queue
+from lystener import logMsg, loadJson, initDB, configparser, queue, UrlBroadcaster
 
-JOB_QUEUE = queue.Queue()
-RESPONSE_QUEUE = queue.Queue()
-
+# starting 2 threads 
+DAEMONS = [UrlBroadcaster(), UrlBroadcaster()]
 
 # create the application instance 
-app = flask.Flask(__name__) 
+app = flask.Flask(__name__)
 app.config.update(
 	# 300 seconds = 5 minutes lifetime session
 	PERMANENT_SESSION_LIFETIME = 300,
@@ -35,6 +33,7 @@ app.config.update(
 	# 
 	TEMPLATES_AUTO_RELOAD = True
 )
+
 # redirect common http errors to index
 app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
@@ -51,19 +50,6 @@ app.config.ini = configparser.ConfigParser(allow_no_value=True)
 inifile = os.path.join(lystener.DATA, "listener.ini")
 if os.path.exists(inifile):
 	app.config.ini.read(inifile)
-
-
-class TaskManager(threading.Thread):
-
-	def start(self, *args, **kwargs):
-		while True:
-			func, data = JOB_QUEUE.get()
-			try:
-				resp = {"success": True, "message": func(data)}
-			except Exception as error:
-				resp = {"except": True, "error": "%r" % error}
-			logMsg("%s response:\n%s" % (func.__name__, resp))
-			RESPONSE_QUEUE.put(resp)
 
 
 @app.route("/")
@@ -90,6 +76,7 @@ def index():
 def execute(module, name):
 
 	if flask.request.method == "POST":
+		# parse data as json object and try to get the content of `data` field
 		data = json.loads(flask.request.data).get("data", False)
 
 		# check the data sent by webhook
@@ -101,8 +88,10 @@ def execute(module, name):
 		# check autorization and exit if bad one
 		# TESTED --> OK
 		autorization = flask.request.headers.get("Authorization", "?")
+		# get token-autorization from registered webhook
 		webhook = loadJson("%s.%s.json" % (module, name))
 		half_token = webhook.get("token", 32*" ")[:32]
+		# get token-autorization list from listener.ini file
 		if app.config.ini.has_section("Autorizations"):
 			ini_autorizations = app.config.ini.options("Autorizations")
 		if autorization == "?" or (half_token != autorization and autorization not in ini_autorizations):
@@ -129,33 +118,27 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 	
-		### NEED PRODUCER CONSMER PATTERN
-		### TESTED
-		# # act as a hub endpoints list found
-		# endpoints = webhook.get("hub", [])
-		# # or if config file has a [Hub] section
-		# if app.config.ini.has_section("Hub"):
-		# 	endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
-		# if len(endpoints):
-		# 	result = []
-		# 	for endpoint in endpoints:
-		# 		try:
-		# 			req = requests.post(endpoint, data=flask.request.data, headers=flask.request.headers, timeout=5, verify=True)
-		# 		except Exception as error:
-		# 			result.append({"success":False,"error":"%r"%error,"except":True})
-		# 		else:
-		# 			result.append(req.text)
-		# 	msg = "event broadcasted to hub :\n%s" % json.dumps(dict(zip(endpoints, result)), indent=2)
-		# 	logMsg(msg)
-		# 	# if node is used as a hub, should not have to execute something
-		# 	# so exit here
-		# 	return json.dumps({"success": True, "message": msg})
+		# act as a hub if endpoints list found
+		# TESTED --> NO
+		endpoints = webhook.get("hub", [])
+		# or if config file has a [Hub] section
+		if app.config.ini.has_section("Hub"):
+			endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
+		if len(endpoints):
+			result = []
+			for endpoint in endpoints:
+				UrlBroadcaster.JOB.put([endpoint, flask.requests.data, flask.requests.headers])
+			msg = "event broadcasted to hub :\n%s" % json.dumps("\n".join(endpoints), indent=2)
+			logMsg(msg)
+			# if node is used as a hub, should not have to execute something
+			# so exit here
+			return json.dumps({"success": True, "message": msg})
 
 		try:
 			# import asked module
 			obj = import_module("lystener." + module)
 		except ImportError as error:
-			msg = "%r\ncan not import python element %s" % (error, module)
+			msg = "%r\ncan not import python module %s" % (error, module)
 			logMsg(msg)
 			return json.dumps({"success": False, "message": msg})
 
@@ -197,6 +180,7 @@ def close(*args, **kw):
 
 
 def sameDataSort(data, reverse=False):
+	"""return a sorted object from iterable data"""
 	if isinstance(data, (list, tuple)):
 		return sorted(data, reverse=reverse)
 	elif isinstance(data, dict):

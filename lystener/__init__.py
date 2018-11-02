@@ -8,6 +8,7 @@ import imp
 import json
 import sqlite3
 import datetime
+import threading
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
@@ -119,4 +120,25 @@ def initDB():
 	sqlite.row_factory = sqlite3.Row
 	sqlite.commit()
 	return sqlite
+
+
+class UrlBroadcaster(threading.Thread):
+
+	JOB = queue.Queue()
+
+	def __init__(self, *args, **kwargs):
+		threading.Thread.__init__(self)
+		self.daemon = True
+		self.start()
+
+	def run(self):
+		while True:
+			endpoint, data, headers = UrlBroadcaster.JOB.get()
+			try:
+				requests.post(endpoint, data=data, headers=headers, timeout=5, verify=True)
+			except Exception as error:
+				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":False,"error":"%r"%error,"except":True}, indent=2))
+			else:
+				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":True}, indent=2))
+
 
