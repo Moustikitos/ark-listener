@@ -2,11 +2,12 @@
 # install system dependencies
 clear
 
-if [ $# = 0 ] then
-    B = master
+if [ $# = 0 ]; then
+    B="master"
 else
-    B = $1
+    B=$1
 fi
+echo "branch selected = $B"
 
 echo installing system dependencies
 echo ==============================
@@ -28,7 +29,11 @@ else
     git reset --hard
 fi
 git fetch --all
-git checkout tags/$B -f
+if [ "$B" == "master" ]; then
+    git checkout $B -f
+else
+    git checkout tags/$B -f
+fi
 git pull
 
 echo
@@ -45,7 +50,7 @@ cd ~/ark-listener
 echo
 echo installing python dependencies
 echo ==============================
-pip install --user -r requirements.txt -q
+pip install -r requirements.txt -q
 
 # # initialize lystener
 # echo
