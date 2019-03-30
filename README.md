@@ -12,29 +12,20 @@
 ## Install
 
 ```bash
-wget https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh
-bash lys-install.sh
+ bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
 ```
 
 ## Concept
 
-Ark core webhooks triggers POST requests containing data as JSON object to a
-targeted peer. This one then have to parse data and trigger code execution.
+Ark core webhooks triggers POST requests containing data as JSON object to a targeted peer. This one then have to parse data and trigger code execution.
 
-`ark-listener` uses a Flask application listening every POST requests received
-with the pattern : `http://0.0.0.0:5001/module/function`.
+`ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://0.0.0.0:5001/module/function`.
 
-for example, a POST to `http://0.0.0.0:5001/hyperledger/executeInsurancePolicy`
-will be understand as : execute `executeInsurancePolicy` function from `hyperledger`
-module with JSON found in request. In this particular case, the python code
-triggered have to send data to hyperledger according to the targeted smart
-contract specification.
+for example, a POST to `http://0.0.0.0:5001/hyperledger/executeInsurancePolicy` will be understand as : execute `executeInsurancePolicy` function from `hyperledger` module with JSON found in request. In this particular case, the python code triggered have to send data to hyperledger according to the targeted smart contract specification.
 
 ## Where is stored code to execute ?
 
-The ark-listener tree contains a `modules` folder where you can save your
-custom code to execute. If another place is needed, simply add the path to the
-`modules.pth` file and `lystener` will be able to find it.
+The ark-listener tree contains a `modules` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `modules.pth` file and `lystener` will be able to find it.
 
 ## How can I check deployed listeners ?
 
