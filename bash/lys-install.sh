@@ -5,7 +5,7 @@ clear
 if [ $# = 0 ] then
     B = master
 else
-    B = &1
+    B = $1
 fi
 
 echo installing system dependencies
