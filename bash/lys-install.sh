@@ -69,10 +69,9 @@ sudo cp nginx-lys /etc/nginx/sites-available
 sudo ln -sf /etc/nginx/sites-available/nginx-lys /etc/nginx/sites-enabled
 sudo service nginx restart
 
-cp bash/activate ~
-cp bash/lys ~
+chmod +x bash/activate
 
+cp bash/lys ~
 cd ~
 chmod +x lys
-chmod +x activate
 echo "done"
