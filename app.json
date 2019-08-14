@@ -2,12 +2,12 @@
     "apps": [
         {
             "exec_interpreter": "python",
-            "script": "srv.py",
+            "script": "bash/srv.sh",
             "exec_mode": "fork",
             "args": "--ip=0.0.0.0 --port=5001",
             "instances": 1,
             "log_date_format": "YYYY-MM-DD HH:mm Z",
-            "name": "lystener-server",
+            "name": "lys-srv",
             "combine_logs": true
         }
     ]
