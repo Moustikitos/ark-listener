@@ -23,50 +23,56 @@ echo downloading ark-listener package
 echo ================================
 cd ~
 if (git clone --branch $B https://github.com/Moustikitos/ark-listener.git) then
-    cd ~/ark-listener
+cd ~/ark-listener
 else
-    cd ~/ark-listener
-    git reset --hard
+    echo "ark-zen already cloned !"
 fi
-git fetch --all
+cd ~/ark-listener
+git -q reset --hard
+git -q fetch --all
 if [ "$B" == "master" ]; then
     git checkout $B -f
 else
     git checkout tags/$B -f
 fi
 git pull
+echo "done"
 
 echo
 echo creating virtual environement
 echo =============================
-mkdir ~/.local/share/ark-listener/venv -p
-virtualenv ~/.local/share/ark-listener/venv -q
+if [ ! -d "$HOME/.local/share/ark-zen/venv" ]; then
+    mkdir ~/.local/share/ark-listener/venv -p
+    virtualenv ~/.local/share/ark-listener/venv -q
+else
+    echo "virtual environement already there !"
+fi
 . ~/.local/share/ark-listener/venv/bin/activate
 export PYTHONPATH=${PYTHONPATH}:${HOME}/ark-listener
 export PATH=$(yarn global bin):$PATH
 cd ~/ark-listener
+echo "done"
 
 # install python dependencies
 echo
 echo installing python dependencies
 echo ==============================
 pip install -r requirements.txt -q
+echo "done"
 
-# # initialize lystener
-# echo
-# echo initializing lystener
-# echo =====================
-# cp lystener/lys.py ~/lys
-# cd ~
-# chmod +x lys
+# installing zen command
+echo
+echo installing zen command
+echo ======================
+sudo rm /etc/nginx/sites-enabled/nginx-lys
+sudo cp nginx-lys /etc/nginx/sites-available
+sudo ln -sf /etc/nginx/sites-available/nginx-lys /etc/nginx/sites-enabled
+sudo service nginx restart
 
-# # # launch lystener-server or reload it
-# echo
-# echo launching/restarting pm2 tasks
-# echo ==============================
-# if [ "$(pm2 id lys-srv) " = "[] " ]; then
-#     cd ~/ark-listener
-#     pm2 start app.json
-# else
-#     pm2 restart lystener-server
-# fi
+cp bash/activate ~
+cp bash/lys ~
+
+cd ~
+chmod +x lys
+chmod +x activate
+echo "done"
