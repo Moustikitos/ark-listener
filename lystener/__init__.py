@@ -6,19 +6,16 @@ import re
 import sys
 import imp
 import json
-import sqlite3
 import datetime
 import threading
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
 if PY3:
-	import configparser
 	import queue
 	input = input 
 else:
 	import Queue as queue
-	import ConfigParser as configparser
 	input = raw_input
 
 
@@ -31,6 +28,7 @@ LOG = os.path.abspath(os.path.join(ROOT, "app", ".log"))
 
 # add the modules folder to the package path
 __path__.append(os.path.abspath(os.path.join(ROOT, "modules")))
+
 # add custom modules pathes from modules.pth file
 # targeted python code could be anywhere where user can access
 pathfile = os.path.join(ROOT, "modules.pth")
@@ -109,20 +107,50 @@ def chooseItem(msg, *elem):
 		return False
 
 
-def initDB():
-	database = os.path.join(DATA, "database.db")
-	if not os.path.exists(DATA):
-		os.makedirs(DATA)
-	sqlite = sqlite3.connect(database)
-	cursor = sqlite.cursor()
-	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
-	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
-	sqlite.row_factory = sqlite3.Row
-	sqlite.commit()
-	return sqlite
+	def initDB():
+		database = os.path.join(DATA, "database.db")
+		if not os.path.exists(DATA):
+			os.makedirs(DATA)
+		sqlite = sqlite3.connect(database)
+		cursor = sqlite.cursor()
+		cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
+		cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
+		sqlite.row_factory = sqlite3.Row
+		sqlite.commit()
+		return sqlite
 
 
-class UrlBroadcaster(threading.Thread):
+# class UrlBroadcaster(threading.Thread):
+
+# 	JOB = queue.Queue()
+# 	LOCK = threading.Lock()
+# 	STOP = threading.Event()
+
+# 	@staticmethod
+# 	def killall():
+# 		UrlBroadcaster.STOP.set()
+
+# 	def __init__(self, *args, **kwargs):
+# 		threading.Thread.__init__(self)
+# 		self.daemon = True
+# 		self.start()
+
+# 	def run(self):
+# 		while not UrlBroadcaster.STOP.is_set():
+# 			endpoint, data, headers = UrlBroadcaster.JOB.get()
+# 			try:
+# 				requests.post(endpoint, data=data, headers=headers, timeout=5, verify=True)
+# 			except Exception as error:
+# 				UrlBroadcaster.LOCK.aquire()
+# 				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":False,"error":"%r"%error,"except":True}, indent=2))
+# 			else:
+# 				UrlBroadcaster.LOCK.aquire()
+# 				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":True}, indent=2))
+# 			finally:
+# 				UrlBroadcaster.LOCK.release()
+
+
+class TaskExecutioner(threading.Thread):
 
 	JOB = queue.Queue()
 	LOCK = threading.Lock()
@@ -130,7 +158,7 @@ class UrlBroadcaster(threading.Thread):
 
 	@staticmethod
 	def killall():
-		UrlBroadcaster.STOP.set()
+		TaskExecutioner.STOP.set()
 
 	def __init__(self, *args, **kwargs):
 		threading.Thread.__init__(self)
@@ -138,16 +166,16 @@ class UrlBroadcaster(threading.Thread):
 		self.start()
 
 	def run(self):
-		while not UrlBroadcaster.STOP.is_set():
-			endpoint, data, headers = UrlBroadcaster.JOB.get()
+		while not TaskExecutioner.STOP.is_set():
+			name, func, data = TaskExecutioner.JOB.get()
 			try:
-				requests.post(endpoint, data=data, headers=headers, timeout=5, verify=True)
+				response = func(data)
 			except Exception as error:
-				UrlBroadcaster.LOCK.aquire()
-				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":False,"error":"%r"%error,"except":True}, indent=2))
+				TaskExecutioner.LOCK.aquire()
+				logMsg("%s response:\n%s" % (name, "%r"%error))
 			else:
-				UrlBroadcaster.LOCK.aquire()
-				logMsg("%r" % json.dumps({"endpoint":endpoint,"success":True}, indent=2))
+				TaskExecutioner.LOCK.aquire()
+				logMsg("%s response:\n%s" % (name, response))
 			finally:
-				UrlBroadcaster.LOCK.release()
+				TaskExecutioner.LOCK.release()
 

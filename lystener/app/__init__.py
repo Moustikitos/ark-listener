@@ -15,7 +15,7 @@ from importlib import import_module
 from lystener import logMsg, loadJson, initDB, configparser, UrlBroadcaster
 
 # starting 2 threads 
-DAEMONS = [UrlBroadcaster(), UrlBroadcaster()]
+DAEMONS = [TaskExecutioner(), TaskExecutioner()]
 
 # create the application instance 
 app = flask.Flask(__name__)
@@ -43,9 +43,6 @@ app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("in
 # [Autorizations]
 # cc89e79975ea6ce45aa3a2fd7a54d383=forger.logSomething
 # 37124939c97757349fc2f632683ef44e=hyperledger.executeInsurancePolicy	
-# [Hub]
-# 1=http://144.202.75.170:5001/test/block
-# 2=http://15.76.33.73:5000/test/block
 app.config.ini = configparser.ConfigParser(allow_no_value=True)
 inifile = os.path.join(lystener.DATA, "listener.ini")
 if os.path.exists(inifile):
@@ -117,22 +114,22 @@ def execute(module, name):
 			# exit if signature found in database
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
-	
-		# act as a hub if endpoints list found
-		# TESTED --> NO
-		endpoints = webhook.get("hub", [])
-		# or if config file has a [Hub] section
-		if app.config.ini.has_section("Hub"):
-			endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
-		if len(endpoints):
-			result = []
-			for endpoint in endpoints:
-				UrlBroadcaster.JOB.put([endpoint, flask.requests.data, flask.requests.headers])
-			msg = "event broadcasted to hub :\n%s" % json.dumps("\n".join(endpoints), indent=2)
-			logMsg(msg)
-			# if node is used as a hub, should not have to execute something
-			# so exit here
-			return json.dumps({"success": True, "message": msg})
+
+		# # act as a hub if endpoints list found
+		# # TESTED --> NO
+		# endpoints = webhook.get("hub", [])
+		# # or if config file has a [Hub] section
+		# if app.config.ini.has_section("Hub"):
+		# 	endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
+		# if len(endpoints):
+		# 	result = []
+		# 	for endpoint in endpoints:
+		# 		UrlBroadcaster.JOB.put([endpoint, flask.requests.data, flask.requests.headers])
+		# 	msg = "event broadcasted to hub :\n%s" % json.dumps("\n".join(endpoints), indent=2)
+		# 	logMsg(msg)
+		# 	# if node is used as a hub, should not have to execute something
+		# 	# so exit here
+		# 	return json.dumps({"success": True, "message": msg})
 
 		try:
 			# import asked module
@@ -149,18 +146,9 @@ def execute(module, name):
 			### MAYBE NEED PRODUCER CONSMER PATTERN...
 			### if the python code takes too long,
 			### connection will be broken
-			### push to FIFO1 (func, data)
-			### get from FIFO2 with 5s timeout
-			# JOB_QUEUE.put((func, data))
-			# try:
-			# 	msg = RESPONSE_QUEUE.get(timeout=5)
-			# 	logMsg("%s response:\n%s" % (func.__name__, msg))
-			# except:
-			# 	msg = "%s.%s response time reached..." % (module, name)
-			# 	logMsg(msg)
-
-			response = func(data)
-			logMsg("%s response:\n%s" % (name, response))
+			TaskExecutioner.JOB.put((name, func, data))
+			# response = func(data)
+			# logMsg("%s response:\n%s" % (name, response))
 		else:
 			msg = "python definition %s not found in %s" % (name, module)
 			logMsg(msg)
