@@ -6,6 +6,7 @@ import re
 import sys
 import imp
 import json
+import socket
 import datetime
 import threading
 
@@ -38,6 +39,22 @@ if os.path.exists(pathfile):
 		for path in [p.strip() for p in pathes.read().split("\n") if not comment.match(p)]:
 			if path != "":
 				__path__.append(os.path.abspath(path))
+
+
+def getPublicIp():
+	"""Store the public ip of server in PUBLIC_IP global var"""
+	global PUBLIC_IP
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	try:
+		# doesn't even have to be reachable
+		s.connect(('10.255.255.255', 1))
+		PUBLIC_IP = s.getsockname()[0]
+	except:
+		PUBLIC_IP = '127.0.0.1'
+	finally:
+		s.close()
+	return PUBLIC_IP
+getPublicIp()
 
 
 def loadJson(name, folder=None):
