@@ -1,8 +1,8 @@
 {
     "apps": [
         {
-            "exec_interpreter": "bash",
-            "script": "bash/srv.sh",
+            "exec_interpreter": "python",
+            "script": "srv.py",
             "exec_mode": "fork",
             "instances": 1,
             "log_date_format": "YYYY-MM-DD HH:mm Z",

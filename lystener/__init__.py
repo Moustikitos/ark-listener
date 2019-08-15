@@ -7,6 +7,7 @@ import sys
 import imp
 import json
 import socket
+import sqlite3
 import datetime
 import threading
 
@@ -14,9 +15,11 @@ import threading
 PY3 = True if sys.version_info[0] >= 3 else False
 if PY3:
 	import queue
+	import configparser
 	input = input 
 else:
 	import Queue as queue
+	import ConfigParser as configparser
 	input = raw_input
 
 
@@ -54,7 +57,7 @@ def getPublicIp():
 	finally:
 		s.close()
 	return PUBLIC_IP
-getPublicIp()
+# getPublicIp()
 
 
 def loadJson(name, folder=None):
@@ -124,17 +127,17 @@ def chooseItem(msg, *elem):
 		return False
 
 
-	def initDB():
-		database = os.path.join(DATA, "database.db")
-		if not os.path.exists(DATA):
-			os.makedirs(DATA)
-		sqlite = sqlite3.connect(database)
-		cursor = sqlite.cursor()
-		cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
-		cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
-		sqlite.row_factory = sqlite3.Row
-		sqlite.commit()
-		return sqlite
+def initDB():
+	database = os.path.join(DATA, "database.db")
+	if not os.path.exists(DATA):
+		os.makedirs(DATA)
+	sqlite = sqlite3.connect(database)
+	cursor = sqlite.cursor()
+	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
+	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
+	sqlite.row_factory = sqlite3.Row
+	sqlite.commit()
+	return sqlite
 
 
 # class UrlBroadcaster(threading.Thread):

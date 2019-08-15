@@ -37,17 +37,18 @@ import lystener
 
 
 # default peer configuration
-LISTENER_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 5001}
+LISTENER_PEER = {"scheme": "http", "ip": lystener.getPublicIp(), "port": 5001}
 WEBHOOK_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 4004}
 
 # generate defaults peers
-peers = lystener.loadJson("peer.json")
+peers = lystener.loadJson("peer.json", folder=lystener.ROOT)
 LISTENER_PEER.update(peers.get("listener", {}))
 WEBHOOK_PEER.update(peers.get("webhook", {}))
 # dump peer.json on first import
 lystener.dumpJson(
 	{"listener":LISTENER_PEER, "webhook":WEBHOOK_PEER},
-	"peer.json"
+	"peer.json",
+	folder=lystener.ROOT
 )
 
 # global var used by REST requests
