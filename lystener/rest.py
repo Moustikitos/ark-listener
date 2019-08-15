@@ -39,6 +39,7 @@ import lystener
 # default peer configuration
 LISTENER_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 5001}
 WEBHOOK_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 4004}
+
 # generate defaults peers
 peers = lystener.loadJson("peer.json")
 LISTENER_PEER.update(peers.get("listener", {}))

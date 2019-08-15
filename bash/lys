@@ -94,11 +94,11 @@ def start_listening(args={}, **options):
 	appname = app["apps"][0]["name"] = "lys-srv"
 	lystener.dumpJson(app, "app.json", folder=pm2_app_folder)
 	# execute pm2 command lines
-	lystener.start_pm2_app(appname, folder=pm2_app_folder)
+	start_pm2_app(appname, folder=pm2_app_folder)
 
 
 def stop_listening(args={}, **options):
-	lystener.stop_pm2_app("lys-srv")
+	stop_pm2_app("lys-srv")
 
 
 def deploy_listener(args={}, **options):

@@ -31,7 +31,8 @@ app.config.update(
 	# cookie are outdated after PERMANENT_SESSION_LIFETIME seconds of idle
 	SESSION_REFRESH_EACH_REQUEST = True,
 	# 
-	TEMPLATES_AUTO_RELOAD = True
+	TEMPLATES_AUTO_RELOAD = True,
+	SERVER_NAME = "127.0.0.1:5001"
 )
 
 # redirect common http errors to index
@@ -49,7 +50,7 @@ if os.path.exists(inifile):
 	app.config.ini.read(inifile)
 
 
-@app.route("/")
+@app.route("/listeners")
 def index():
 	if os.path.exists(os.path.join(lystener.ROOT, ".json")):
 		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
