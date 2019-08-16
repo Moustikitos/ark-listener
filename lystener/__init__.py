@@ -29,6 +29,14 @@ JSON = os.path.abspath(os.path.join(ROOT, ".json"))
 DATA = os.path.abspath(os.path.join(ROOT, "app", ".data"))
 LOG = os.path.abspath(os.path.join(ROOT, "app", ".log"))
 
+VALID_URL = re.compile(
+	r'^https?://'  # http:// or https://
+	r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+	r'localhost|'  # localhost...
+	r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+	r'(?::\d+)?'  # optional port
+	r'(?:/?|[/?]\S+)$', re.IGNORECASE
+)
 
 # add the modules folder to the package path
 __path__.append(os.path.abspath(os.path.join(ROOT, "modules")))
