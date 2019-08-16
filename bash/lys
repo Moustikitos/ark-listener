@@ -109,10 +109,12 @@ def deploy_listener(args={}, **options):
 	# else create a condition.
 	# Ark webhook api will manage condition errors
 	elif len(options):
+		try: value = int(value)
+		except: value = options["value"]
 		condition = {
 			"key": options["field"],
 			"condition": options["condition"],
-			"value": options["value"]
+			"value": value
 		}
 	
 	# create the webhook
