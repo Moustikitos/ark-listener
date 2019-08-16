@@ -32,7 +32,6 @@ app.config.update(
 	SESSION_REFRESH_EACH_REQUEST = True,
 	# 
 	TEMPLATES_AUTO_RELOAD = True,
-	SERVER_NAME = "127.0.0.1:5001"
 )
 
 # redirect common http errors to index
@@ -78,13 +77,11 @@ def execute(module, name):
 		data = json.loads(flask.request.data).get("data", False)
 
 		# check the data sent by webhook
-		# TESTED --> OK
 		if not data:
 			logMsg("no data provided")
 			return json.dumps({"success": False, "message": "no data provided"})
 
 		# check autorization and exit if bad one
-		# TESTED --> OK
 		autorization = flask.request.headers.get("Authorization", "?")
 		# get token-autorization from registered webhook
 		webhook = loadJson("%s.%s.json" % (module, name))
@@ -97,8 +94,8 @@ def execute(module, name):
 			return json.dumps({"success": False, "message": "not autorized here"})
 
 		# use sqlite database to check if data already parsed once
-		# TESTED --> OK
 		cursor = connect()
+		# try to get a signature from data
 		signature = data.get("signature", False)
 		if not signature:
 			# remove all trailing spaces, new lines, tabs etc...
@@ -108,58 +105,14 @@ def execute(module, name):
 			signature = h.decode() if isinstance(h, bytes) else h
 		# check if signature already in database
 		cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
-		if cursor.fetchone()[0] == 0:
-			# insert signature if no one found in database
-			cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (signature, autorization))
-		else:
+		if cursor.fetchone()[0] != 0:
 			# exit if signature found in database
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
-
-		# # act as a hub if endpoints list found
-		# # TESTED --> NO
-		# endpoints = webhook.get("hub", [])
-		# # or if config file has a [Hub] section
-		# if app.config.ini.has_section("Hub"):
-		# 	endpoints.extend([item[-1] for item in app.config.ini.items("Hub", vars={})])
-		# if len(endpoints):
-		# 	result = []
-		# 	for endpoint in endpoints:
-		# 		UrlBroadcaster.JOB.put([endpoint, flask.requests.data, flask.requests.headers])
-		# 	msg = "event broadcasted to hub :\n%s" % json.dumps("\n".join(endpoints), indent=2)
-		# 	logMsg(msg)
-		# 	# if node is used as a hub, should not have to execute something
-		# 	# so exit here
-		# 	return json.dumps({"success": True, "message": msg})
-
-		try:
-			# import asked module
-			obj = import_module("lystener." + module)
-		except ImportError as error:
-			msg = "%r\ncan not import python module %s" % (error, module)
-			logMsg(msg)
-			return json.dumps({"success": False, "message": msg})
-
-		# get asked function and execute with data provided by webhook
-		func = getattr(obj, name, False)
-		if func:
-
-			### MAYBE NEED PRODUCER CONSMER PATTERN...
-			### if the python code takes too long,
-			### connection will be broken
-			TaskExecutioner.JOB.put((name, func, data))
-			# response = func(data)
-			# logMsg("%s response:\n%s" % (name, response))
 		else:
-			msg = "python definition %s not found in %s" % (name, module)
-			logMsg(msg)
-			return json.dumps({"success": False, "message": msg})
-
-		# remove the module so if code is modified it will be updated without
-		# a listener restart
-		sys.modules.pop(obj.__name__, False)
-		del obj
-		return json.dumps({"success": True, "message": response})
+			logMsg("data autorized")
+			TaskExecutioner.JOB.put(module, name, data, signature, autorization)
+			return json.dumps({"success": True, "message": "data autorized"})
 
 
 @app.teardown_appcontext
