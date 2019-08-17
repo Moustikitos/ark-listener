@@ -34,15 +34,15 @@ ark-listener/bash/activate
 # using default webhook peer (http://127.0.0.1:4004)
 ./lys deploy-listener transaction.applied forger.logSomething ^sc:.*$
 # or
-./lys deploy-listener transaction.applied forger.logSomething -f vendorField -c regexp -v ^sc:.*$
+./lys deploy-listener transaction.applied forger.logSomething vendorField regexp ^sc:.*$
 
 # if amount >= 25 arks
 # using a custom webhook peer
-./lys deploy-listener transaction.applied forger.logSomething -f amount -c gte -v 2500000000 -w http://dpos.arky-delegate.info:4004
+./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 -w http://dpos.arky-delegate.info:4004
 
 # if amount >= 25 arks and vendorField starting with `sc:`
 # using a custom webhook peer
-./lys deploy-listener transaction.applied forger.logSomething -m amount|gte|2500000000,vendorField|regexp|^sc:.*$ -w http://dpos.arky-delegate.info:4004
+./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
 ## Launch listener
@@ -83,17 +83,13 @@ ark-listener/bash/activate
 
 ```
 Usage:
-   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value> | -m <data>) [-w <webhook>]
+   lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
    lys destroy-listener
    lys start-listening [-p <port>]
    lys stop-listening
    lys public-ip
 
 Options:
--f --field=<field>         : the transaction field to be checked by the node
--c --condition=<condition> : the condition operator used to check the field
--v --value=<value>         : the value triggering the webhook
--m --multiple=<data>       : coma-separated list of key|operator|value terms
 -w --webhook=<webhook>     : the peer registering the webhook
 -p --port=<port>           : the port used for listening srv [default: 5001]
 
