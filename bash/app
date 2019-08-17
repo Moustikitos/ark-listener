@@ -3,10 +3,9 @@
 
 """
 Usage:
-   srv [-i <ip> -p <port>]
+   srv [-p <port>]
 
 Options:
--i --ip=<ip>     : the IP address you want to listen [default: 0.0.0.0]
 -p --port=<port> : the port you want to use          [default: 5001]
 """
 
@@ -24,4 +23,4 @@ if __name__ == "__main__":
 	from lystener.app import app
 
 	args = docopt.docopt(__doc__, argv=sys.argv[1:])
-	app.run(host=args["--ip"], port=int(args["--port"]))
+	app.run(host="0.0.0.0", port=int(args["--port"]))

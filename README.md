@@ -15,7 +15,7 @@ Ark core webhooks trigger POST requests containing data to a targeted peer. This
 
 `ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
 
-If found, `module.function` will be executed with data found in the POST request.
+If found, `module.function` will be executed with data embeded in the POST request.
 
 ## Install
 
@@ -26,6 +26,8 @@ If found, `module.function` will be executed with data found in the POST request
 ## Launch listener
 
 ### For testing purposes
+
+Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
 
 ```bash
 cd ~
@@ -40,8 +42,6 @@ cd ~
 ark-listener/bash/activate
 ./lys start-listening
 ```
-
-Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
 
 ## Where is stored code to execute ?
 
@@ -61,9 +61,9 @@ ark-listener/bash/activate
 
 ```
 Usage:
-   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value>) [-l <listener> -w <webhook>]
-   lys destroy-listener [<function>]
-   lys start-listening [-i <ip> -p <port>]
+   lys deploy-listener <event> <function> (<regexp> | -f <field> -c <condition> -v <value> | -m <data>) [-w <webhook>]
+   lys destroy-listener
+   lys start-listening [-p <port>]
    lys stop-listening
    lys public-ip
 
@@ -71,10 +71,9 @@ Options:
 -f --field=<field>         : the transaction field to be checked by the node
 -c --condition=<condition> : the condition operator used to check the field
 -v --value=<value>         : the value triggering the webhook
--l --listener=<listener>   : the peer receiving whebhook POST request
+-m --multiple=<data>       : coma-separated list of key|operator|value terms
 -w --webhook=<webhook>     : the peer registering the webhook
--i --ip=<ip>               : the ip used for listening server   [default: 0.0.0.0]
--p --port=<port>           : the port used for listening server [default: 5001]
+-p --port=<port>           : the port used for listening srv [default: 5001]
 
 Subcommands:
    deploy-listener  : link a webhook <event> with a python <function> 
