@@ -38,16 +38,6 @@ app.config.update(
 app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
-# load listener.ini config file if found
-# EXAMPLE
-# [Autorizations]
-# cc89e79975ea6ce45aa3a2fd7a54d383=forger.logSomething
-# 37124939c97757349fc2f632683ef44e=hyperledger.executeInsurancePolicy	
-# app.config.ini = configparser.ConfigParser(allow_no_value=True)
-# inifile = os.path.join(lystener.DATA, "listener.ini")
-# if os.path.exists(inifile):
-# 	app.config.ini.read(inifile)
-
 
 @app.route("/listeners")
 def index():
@@ -56,16 +46,10 @@ def index():
 	else:
 		json_list = []
 
-	# if app.config.ini.has_section("Autorizations"):
-	# 	tiny_list = dict(app.config.ini.items("Autorizations", vars={}))
-	# else:
-	# 	tiny_list = {}
-
 	cursor = connect()
 	return flask.render_template("listener.html",
 		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
 		webhooks=json_list,
-		# tinies=tiny_list
 		tinies={}
 	)
 
@@ -81,18 +65,16 @@ def execute(module, name):
 		if not data:
 			logMsg("no data provided")
 			return json.dumps({"success": False, "message": "no data provided"})
+		else:# sort data
+			data = sameDataSort(data)
 
 		# check autorization and exit if bad one
 		autorization = flask.request.headers.get("Authorization", "?")
 		# get token-autorization from registered webhook
-		webhook = loadJson("%s.%s.json" % (module, name))
+		webhook = loadJson("%s.json" % autorization)
 		half_token = webhook.get("token", 32*" ")[:32]
-		# get token-autorization list from listener.ini file
-		# ini_autorizations = {}
-		# if app.config.ini.has_section("Autorizations"):
-		# 	ini_autorizations = app.config.ini.options("Autorizations")
-		if autorization == "?" or (half_token != autorization): # and autorization not in ini_autorizations):
-			logMsg("not autorized here\ngiven auth=%s" % autorization)
+		if autorization == "?" or half_token != autorization:
+			logMsg("not autorized here\n%s" % json.dumps(data, indent=2))
 			return json.dumps({"success": False, "message": "not autorized here"})
 
 		# use sqlite database to check if data already parsed once
@@ -100,9 +82,8 @@ def execute(module, name):
 		# try to get a signature from data
 		signature = data.get("signature", False)
 		if not signature:
-			# remove all trailing spaces, new lines, tabs etc...
-			# and generate sha 256 hash as signature
-			raw = re.sub(r"[\s]*", "", json.dumps(sameDataSort(data)))
+			# remove all trailing spaces, new lines, tabs etc... and generate sha 256 hash as signature
+			raw = re.sub(r"[\s]*", "", json.dumps(data))
 			h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 			signature = h.decode() if isinstance(h, bytes) else h
 		# check if signature already in database
@@ -112,7 +93,7 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 		else:
-			logMsg("data autorized")
+			logMsg("data autorized :\n%s" % json.dumps(data, indent=2))
 			TaskExecutioner.JOB.put(module, name, data, signature, autorization)
 			return json.dumps({"success": True, "message": "data autorized"})
 
