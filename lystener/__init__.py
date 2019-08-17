@@ -22,6 +22,8 @@ else:
 	import ConfigParser as configparser
 	input = raw_input
 
+from importlib import import_module
+
 
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))

@@ -11,7 +11,6 @@ import requests
 import lystener
 
 from collections import OrderedDict
-from importlib import import_module
 from lystener import logMsg, loadJson, initDB, configparser, TaskExecutioner #, UrlBroadcaster
 
 # starting 2 threads 
@@ -63,10 +62,11 @@ def execute(module, name):
 
 		# check the data sent by webhook
 		if not data:
-			logMsg("no data provided")
+			logMsg("no data received")
 			return json.dumps({"success": False, "message": "no data provided"})
 		else:# sort data
 			data = sameDataSort(data)
+			logMsg("data received :\n%s" % json.dumps(data, indent=2))
 
 		# check autorization and exit if bad one
 		autorization = flask.request.headers.get("Authorization", "?")
@@ -93,8 +93,8 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 		else:
-			logMsg("data autorized :\n%s" % json.dumps(data, indent=2))
-			TaskExecutioner.JOB.put(module, name, data, signature, autorization)
+			logMsg("data autorized")
+			TaskExecutioner.JOB.put([module, name, data, signature, autorization])
 			return json.dumps({"success": True, "message": "data autorized"})
 
 
@@ -112,7 +112,7 @@ def sameDataSort(data, reverse=False):
 	elif isinstance(data, dict):
 		result = OrderedDict()
 		for key,value in sorted([(k,v) for k,v in data.items()], key=lambda e:e[0], reverse=reverse):
-			result[k] = sameDataSort(value, reverse)
+			result[key] = sameDataSort(value, reverse)
 		return result
 	else:
 		return data
