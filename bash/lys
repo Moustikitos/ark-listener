@@ -7,6 +7,7 @@ Usage:
    lys destroy-listener
    lys start-listening [-i <ip> -p <port>]
    lys stop-listening
+   lys public-ip
 
 Options:
 -f --field=<field>         : the transaction field to be checked by the node
@@ -23,6 +24,7 @@ Subcommands:
    destroy-listener : unlink webhook <event> from python <function>
    start-listening  : start/restart listener srv
    stop-listening   : stop listener srv
+   public-ip        : get public ip (to be whitelisted on ark relay)
 """
 # -e --endpoints=<endpoints> : the end points where to broadcast event (UNTESTED),  -e <endpoints>
 
@@ -64,6 +66,10 @@ if ! echo "$(pm2 id %(appname)s | tail -n 1)" | grep -qE "\[\]"; then
 fi
 ''' % {"appname": appname}
 )
+
+def public_ip(args={}, **options):
+	sys.stdout.write("%s\n" % lystener.getPublicIp())
+	sys.stdout.flush()
 
 
 def start_listening(args={}, **options):

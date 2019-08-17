@@ -21,8 +21,6 @@ Ark core webhooks triggers POST requests containing data as JSON object to a tar
 
 `ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://0.0.0.0:5001/module/function`.
 
-for example, a POST to `http://0.0.0.0:5001/hyperledger/executeInsurancePolicy` will be understand as : execute `executeInsurancePolicy` function from `hyperledger` module with JSON found in request. In this particular case, the python code triggered have to send data to hyperledger according to the targeted smart contract specification.
-
 ## Where is stored code to execute ?
 
 The ark-listener tree contains a `modules` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `modules.pth` file and `lystener` will be able to find it.
@@ -45,6 +43,7 @@ Usage:
    lys destroy-listener [<function>]
    lys start-listening [-i <ip> -p <port>]
    lys stop-listening
+   lys public-ip
 
 Options:
 -f --field=<field>         : the transaction field to be checked by the node
@@ -60,4 +59,5 @@ Subcommands:
    destroy-listener : unlink webhook <event> from python <function>
    start-listening  : start/restart listener server
    stop-listening   : stop listener server
+   public-ip        : get public ip (to be whitelisted on ark relay)
 ```
