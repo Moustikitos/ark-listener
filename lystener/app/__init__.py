@@ -87,6 +87,7 @@ def execute(module, name):
 		webhook = loadJson("%s.%s.json" % (module, name))
 		half_token = webhook.get("token", 32*" ")[:32]
 		# get token-autorization list from listener.ini file
+		ini_autorizations = {}
 		if app.config.ini.has_section("Autorizations"):
 			ini_autorizations = app.config.ini.options("Autorizations")
 		if autorization == "?" or (half_token != autorization and autorization not in ini_autorizations):
