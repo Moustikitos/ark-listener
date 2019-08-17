@@ -10,8 +10,14 @@ Options:
 -p --port=<port> : the port you want to use          [default: 5001]
 """
 
+import os
 import sys
 import docopt
+
+# add git installation
+sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
+# add parent path if executed from git structure
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 if __name__ == "__main__":
 	from lystener import rest
