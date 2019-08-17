@@ -2,7 +2,7 @@
     "apps": [
         {
             "exec_interpreter": "bash",
-            "script": "bash/srv.sh",
+            "script": "bash/srv",
             "exec_mode": "fork",
             "instances": 1,
             "log_date_format": "YYYY-MM-DD HH:mm Z",
