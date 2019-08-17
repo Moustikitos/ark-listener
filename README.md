@@ -23,6 +23,28 @@ If found, `module.function` will be executed with data embeded in the POST reque
  bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
 ```
 
+### Deploy listener
+
+Execute `forger.logSomething` on `transaction.applied` event
+
+```bash
+cd ~
+ark-listener/bash/activate
+# if vendorField starts with `sc:`
+# using default webhook peer (http://127.0.0.1:4004)
+./lys deploy-listener transaction.applied forger.logSomething ^sc:.*$
+# or
+./lys deploy-listener transaction.applied forger.logSomething -f vendorField -c regexp -v ^sc:.*$
+
+# if amount >= 25 arks
+# using a custom webhook peer
+./lys deploy-listener transaction.applied forger.logSomething -f amount -c gte -v 2500000000 -w http://dpos.arky-delegate.info:4004
+
+# if amount >= 25 arks and vendorField starting with `sc:`
+# using a custom webhook peer
+./lys deploy-listener transaction.applied forger.logSomething -m amount|gte|2500000000,vendorField|regexp|^sc:.*$ -w http://dpos.arky-delegate.info:4004
+```
+
 ## Launch listener
 
 ### For testing purposes

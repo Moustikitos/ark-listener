@@ -67,7 +67,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _GET(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER)
 		try:
 			req = requests.get(
 				peer + "/".join(args),
@@ -83,7 +83,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _POST(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER)
 		try:
 			req = requests.post(
 				peer + "/".join(args),
@@ -99,7 +99,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _PUT(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER)
 		try:
 			req = requests.put(
 				peer + "/".join(args),
@@ -115,7 +115,7 @@ class EndPoint(object):
 
 	@staticmethod
 	def _DELETE(*args, **kwargs):
-		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % LISTENER_PEER)
+		peer = kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER)
 		try:
 			req = requests.delete(
 				peer + "/".join(args),
