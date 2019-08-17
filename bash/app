@@ -6,7 +6,7 @@ Usage:
    srv [-i <ip> -p <port>]
 
 Options:
--i --ip=<ip>     : the IP address you want to listen [default: 127.0.0.1]
+-i --ip=<ip>     : the IP address you want to listen [default: 0.0.0.0]
 -p --port=<port> : the port you want to use          [default: 5001]
 """
 
