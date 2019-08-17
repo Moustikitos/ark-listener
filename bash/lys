@@ -98,7 +98,7 @@ def deploy_listener(args={}, **options):
 
 	# build peers and target url
 	webhook_peer = options.get("webhook", "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
-	target_url = rest.LISTENER_PEER +"/"+ function.replace(".", "/")
+	target_url = ("%(scheme)s://%(ip)s:%(port)s" %rest.LISTENER_PEER) +"/"+ function.replace(".", "/")
 
 	# compute listener condition
 	# if only a regexp is givent compute condition on vendorField
