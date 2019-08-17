@@ -43,10 +43,10 @@ app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("in
 # [Autorizations]
 # cc89e79975ea6ce45aa3a2fd7a54d383=forger.logSomething
 # 37124939c97757349fc2f632683ef44e=hyperledger.executeInsurancePolicy	
-app.config.ini = configparser.ConfigParser(allow_no_value=True)
-inifile = os.path.join(lystener.DATA, "listener.ini")
-if os.path.exists(inifile):
-	app.config.ini.read(inifile)
+# app.config.ini = configparser.ConfigParser(allow_no_value=True)
+# inifile = os.path.join(lystener.DATA, "listener.ini")
+# if os.path.exists(inifile):
+# 	app.config.ini.read(inifile)
 
 
 @app.route("/listeners")
@@ -56,16 +56,17 @@ def index():
 	else:
 		json_list = []
 
-	if app.config.ini.has_section("Autorizations"):
-		tiny_list = dict(app.config.ini.items("Autorizations", vars={}))
-	else:
-		tiny_list = {}
+	# if app.config.ini.has_section("Autorizations"):
+	# 	tiny_list = dict(app.config.ini.items("Autorizations", vars={}))
+	# else:
+	# 	tiny_list = {}
 
 	cursor = connect()
 	return flask.render_template("listener.html",
 		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
 		webhooks=json_list,
-		tinies=tiny_list
+		# tinies=tiny_list
+		tinies={}
 	)
 
 
@@ -87,11 +88,11 @@ def execute(module, name):
 		webhook = loadJson("%s.%s.json" % (module, name))
 		half_token = webhook.get("token", 32*" ")[:32]
 		# get token-autorization list from listener.ini file
-		ini_autorizations = {}
-		if app.config.ini.has_section("Autorizations"):
-			ini_autorizations = app.config.ini.options("Autorizations")
-		if autorization == "?" or (half_token != autorization and autorization not in ini_autorizations):
-			logMsg("not autorized here")
+		# ini_autorizations = {}
+		# if app.config.ini.has_section("Autorizations"):
+		# 	ini_autorizations = app.config.ini.options("Autorizations")
+		if autorization == "?" or (half_token != autorization): # and autorization not in ini_autorizations):
+			logMsg("not autorized here\ngiven auth=%s" % autorization)
 			return json.dumps({"success": False, "message": "not autorized here"})
 
 		# use sqlite database to check if data already parsed once
