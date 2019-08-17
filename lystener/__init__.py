@@ -192,7 +192,7 @@ class TaskExecutioner(threading.Thread):
 					msg = "python definition %s not found in %s" % (name, module)
 
 			# 
-			TaskExecutioner.LOCK.aquire()
+			TaskExecutioner.LOCK.acquire()
 			logMsg(msg)
 			if not error:
 				sqlite = initDB()
