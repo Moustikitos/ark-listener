@@ -34,7 +34,7 @@ app.config.update(
 )
 
 
-@app.route("/listeners")
+@app.route("/")
 def index():
 	if os.path.exists(os.path.join(lystener.ROOT, ".json")):
 		json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
