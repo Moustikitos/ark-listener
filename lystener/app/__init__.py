@@ -11,10 +11,10 @@ import requests
 import lystener
 
 from collections import OrderedDict
-from lystener import logMsg, loadJson, initDB, configparser, TaskExecutioner #, UrlBroadcaster
+from lystener import logMsg, loadJson, initDB, configparser, TaskExecutioner
 
-# starting 2 threads 
-DAEMONS = [TaskExecutioner(), TaskExecutioner()]
+# starting 3 threads 
+DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
 
 # create the application instance 
 app = flask.Flask(__name__)
@@ -33,9 +33,9 @@ app.config.update(
 	TEMPLATES_AUTO_RELOAD = True,
 )
 
-# redirect common http errors to index
-app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
-app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
+# # redirect common http errors to index
+# app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
+# app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
 
 
 @app.route("/listeners")
@@ -59,18 +59,16 @@ def execute(module, name):
 	if flask.request.method == "POST":
 		# parse data as json object and try to get the content of `data` field
 		data = json.loads(flask.request.data).get("data", False)
-
 		# check the data sent by webhook
 		if not data:
 			logMsg("no data received")
 			return json.dumps({"success": False, "message": "no data provided"})
-		else:# sort data
+		# sort data
+		else:
 			data = sameDataSort(data)
-			logMsg("data received :\n%s" % json.dumps(data, indent=2))
 
 		# check autorization and exit if bad one
 		autorization = flask.request.headers.get("Authorization", "?")
-		# get token-autorization from registered webhook
 		webhook = loadJson("%s.json" % autorization)
 		half_token = webhook.get("token", 32*" ")[:32]
 		if autorization == "?" or half_token != autorization:
@@ -82,14 +80,15 @@ def execute(module, name):
 		# try to get a signature from data
 		signature = data.get("signature", False)
 		if not signature:
-			# remove all trailing spaces, new lines, tabs etc... and generate sha 256 hash as signature
+			# generate sha 256 hash as signature if no one found 
+			# remove all trailing spaces, new lines, tabs etc...
 			raw = re.sub(r"[\s]*", "", json.dumps(data))
 			h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 			signature = h.decode() if isinstance(h, bytes) else h
 		# check if signature already in database
 		cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
+		# exit if signature found in database
 		if cursor.fetchone()[0] != 0:
-			# exit if signature found in database
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 		else:

@@ -69,12 +69,12 @@ fi
 def start_listening(args={}, **options):
 	# persistent options effect modifying the pm2 app.json configuration
 	pm2_app_folder = os.path.abspath(os.path.dirname(lystener.__path__[0]))
-	app = lystener.loadJson("app.json", folder=pm2_app_folder)
-	app["apps"][0]["args"] = " ".join(["--{0:s}={1:s}".format(*item) for item in options.items()])
+	app = lystener.loadJson("srv.json", folder=pm2_app_folder)
 	rest.LISTENER_PEER["port"] = options["port"]
 	rest.LISTENER_PEER["ip"] = options["ip"]
+	app["apps"][0]["args"] = "%s" % options["port"]
 	appname = app["apps"][0]["name"] = "lys-srv"
-	lystener.dumpJson(app, "app.json", folder=pm2_app_folder)
+	lystener.dumpJson(app, "srv.json", folder=pm2_app_folder)
 	# execute pm2 command lines
 	start_pm2_app(appname, folder=pm2_app_folder)
 

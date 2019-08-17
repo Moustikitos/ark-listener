@@ -154,6 +154,7 @@ class TaskExecutioner(threading.Thread):
 	JOB = queue.Queue()
 	LOCK = threading.Lock()
 	STOP = threading.Event()
+	MODULES = set([])
 
 	@staticmethod
 	def killall():
@@ -165,43 +166,51 @@ class TaskExecutioner(threading.Thread):
 		self.start()
 
 	def run(self):
-		# open database in thread
-		sqlite = initDB()
-		cursor = sqlite.cursor()
+		# controled infinite loop
 		while not TaskExecutioner.STOP.is_set():
+			error = False
 			# wait until a job is given
-			name, module, data, sig, auth = TaskExecutioner.JOB.get()
+			module, name, data, sig, auth = TaskExecutioner.JOB.get()
 			# import asked module
 			try:
 				obj = import_module("lystener." + module)
 			except ImportError as error:
-				logMsg("%r\ncan not import python module %s" % (error, module))
+				msg = "%r\ncan not import python module %s" % (error, module)
+			# get asked function and execute it with data
 			else:
-				# get asked function and execute it with data
+				TaskExecutioner.MODULES.add(obj)
 				func = getattr(obj, name, False)
 				if func:
 					try:
 						response = func(data)
-					except Exception as error:
-						TaskExecutioner.LOCK.aquire()
-						logMsg("%s response:\n%s" % (name, "%r"%error))
+					except Exception as exception:
+						error = True
+						msg = "%s response:\n%s" % (name, "%r"%exception)
 					else:
-						TaskExecutioner.LOCK.aquire()
-						logMsg("%s response:\n%s" % (name, response))
-					finally:
-						cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (sig, auth))
-						TaskExecutioner.LOCK.release()
+						msg = "%s response:\n%s" % (name, response)
 				else:
-					TaskExecutioner.LOCK.aquire()
-					logMsg("python definition %s not found in %s" % (name, module))
-					TaskExecutioner.LOCK.release()
-				
-				# remove the module so if code is modified it will be updated without a listener restart
-				sys.modules.pop(obj.__name__, False)
-				del obj
+					msg = "python definition %s not found in %s" % (name, module)
 
-				# save database
+			# 
+			TaskExecutioner.LOCK.aquire()
+			logMsg(msg)
+			if not error:
+				sqlite = initDB()
+				cursor = sqlite.cursor()
+				cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (sig, auth))
 				sqlite.commit()
+				sqlite.close()
+			TaskExecutioner.LOCK.release()
 
-		# close database on exit
-		sqlite.close()
+			# remove the module if all jobs done
+			# so if code is modified it will be updated without a listener restart
+			if TaskExecutioner.JOB.empty():
+				error = False
+				while not error:
+					try:
+						obj = TaskExecutioner.MODULES.pop()
+					except:
+						error = True
+					else:
+						sys.modules.pop(obj.__name__, False)
+						del obj

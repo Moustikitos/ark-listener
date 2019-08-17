@@ -1,0 +1,13 @@
+{
+    "apps": [
+        {
+            "exec_interpreter": "bash",
+            "script": "bash/srv.sh",
+            "exec_mode": "fork",
+            "instances": 1,
+            "log_date_format": "YYYY-MM-DD HH:mm Z",
+            "name": "lys-srv",
+            "combine_logs": true
+        }
+    ]
+}
