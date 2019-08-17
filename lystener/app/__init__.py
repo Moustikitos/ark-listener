@@ -33,10 +33,6 @@ app.config.update(
 	TEMPLATES_AUTO_RELOAD = True,
 )
 
-# # redirect common http errors to index
-# app.register_error_handler(404, lambda *a,**kw: flask.redirect(flask.url_for("index")))
-# app.register_error_handler(500, lambda *a,**kw: flask.redirect(flask.url_for("index")))
-
 
 @app.route("/listeners")
 def index():
