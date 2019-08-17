@@ -91,9 +91,6 @@ def execute(module, name):
 			logMsg("data autorized")
 			TaskExecutioner.JOB.put([module, name, data, signature, autorization])
 			return json.dumps({"success": True, "message": "data autorized"})
-
-	else:
-		return json.dumps({"error":True, "message":"GET request not allowed"})
 		
 
 @app.teardown_appcontext
