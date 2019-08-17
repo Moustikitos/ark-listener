@@ -9,17 +9,39 @@
 
  * [X] Ark-v2
 
+## Concept
+
+Ark core webhooks trigger POST requests containing data to a targeted peer. This one then have to parse data and trigger code execution.
+
+`ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
+
+If found, `module.function` will be executed with data found in the POST request.
+
 ## Install
 
 ```bash
  bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
 ```
 
-## Concept
+## Launch listener
 
-Ark core webhooks triggers POST requests containing data as JSON object to a targeted peer. This one then have to parse data and trigger code execution.
+### For testing purposes
 
-`ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://0.0.0.0:5001/module/function`.
+```bash
+cd ~
+ark-listener/bash/activate
+pm2 start app.json
+```
+
+### In production mode (still under developement)
+
+```bash
+cd ~
+ark-listener/bash/activate
+./lys start-listening
+```
+
+Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
 
 ## Where is stored code to execute ?
 
@@ -59,5 +81,5 @@ Subcommands:
    destroy-listener : unlink webhook <event> from python <function>
    start-listening  : start/restart listener server
    stop-listening   : stop listener server
-   public-ip        : get public ip (to be whitelisted on ark relay)
+   public-ip        : get public ip
 ```

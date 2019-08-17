@@ -24,7 +24,7 @@ Subcommands:
    destroy-listener : unlink webhook <event> from python <function>
    start-listening  : start/restart listener srv
    stop-listening   : stop listener srv
-   public-ip        : get public ip (to be whitelisted on ark relay)
+   public-ip        : get public ip
 """
 # -e --endpoints=<endpoints> : the end points where to broadcast event (UNTESTED),  -e <endpoints>
 
