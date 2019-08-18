@@ -75,9 +75,8 @@ The listening server redirects browser to listener details page.
 ## `lys` commands
 
 ```bash
-cd ~
-ark-listener/bash/activate
-./lys --help
+~/ark-listener/bash/activate
+~/lys --help
 ```
 
 ```
