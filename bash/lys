@@ -37,7 +37,7 @@ from lystener import rest
 
 
 def start_pm2_app(appname, folder="?"):
-	name = appname.split("-"[-1])
+	name = appname.split("-")[-1]
 	os.system('''
 if echo "$(pm2 id %(appname)s | tail -n 1)" | grep -qE "\[\]"; then
 	cd %(pm2_app_folder)s
