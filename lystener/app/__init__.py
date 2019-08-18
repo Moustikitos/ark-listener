@@ -43,7 +43,7 @@ def index():
 
 	cursor = connect()
 	return flask.render_template("listener.html",
-		counts=dict(cursor.execute("SELECT autorization, count(*) FROM history GROUP BY autorization").fetchall()),
+		counts=dict(cursor.execute("SELECT authorization, count(*) FROM history GROUP BY authorization").fetchall()),
 		webhooks=json_list,
 		tinies={}
 	)
@@ -63,11 +63,11 @@ def execute(module, name):
 		else:
 			data = sameDataSort(data)
 
-		# check autorization and exit if bad one
-		autorization = flask.request.headers.get("Authorization", "?")
-		webhook = loadJson("%s.json" % autorization)
+		# check authorization and exit if bad one
+		authorization = flask.request.headers.get("Authorization", "?")
+		webhook = loadJson("%s.json" % authorization)
 		half_token = webhook.get("token", 32*" ")[:32]
-		if autorization == "?" or half_token != autorization:
+		if authorization == "?" or half_token != authorization:
 			logMsg("not autorized here\n%s" % json.dumps(data, indent=2))
 			return json.dumps({"success": False, "message": "not autorized here"})
 
@@ -88,8 +88,8 @@ def execute(module, name):
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
 		else:
-			logMsg("data autorized")
-			TaskExecutioner.JOB.put([module, name, data, signature, autorization])
+			logMsg("data autorized - %s" % authorization)
+			TaskExecutioner.JOB.put([module, name, data, signature, authorization])
 			return json.dumps({"success": True, "message": "data autorized"})
 		
 

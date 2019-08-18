@@ -28,8 +28,8 @@ from importlib import import_module
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))
 JSON = os.path.abspath(os.path.join(ROOT, ".json"))
-DATA = os.path.abspath(os.path.join(ROOT, "app", ".data"))
-LOG = os.path.abspath(os.path.join(ROOT, "app", ".log"))
+DATA = os.path.abspath(os.path.join(ROOT, ".data"))
+LOG = os.path.abspath(os.path.join(ROOT, ".log"))
 
 VALID_URL = re.compile(
 	r'^https?://'  # http:// or https://
@@ -174,8 +174,8 @@ class TaskExecutioner(threading.Thread):
 			# import asked module
 			try:
 				obj = import_module("lystener." + module)
-			except ImportError as error:
-				msg = "%r\ncan not import python module %s" % (error, module)
+			except ImportError as exception:
+				msg = "%r\ncan not import python module %s" % (exception, module)
 			# get asked function and execute it with data
 			else:
 				TaskExecutioner.MODULES.add(obj)
