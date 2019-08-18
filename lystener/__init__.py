@@ -142,7 +142,7 @@ def initDB():
 		os.makedirs(DATA)
 	sqlite = sqlite3.connect(database)
 	cursor = sqlite.cursor()
-	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, autorization TEXT);")
+	cursor.execute("CREATE TABLE IF NOT EXISTS history(signature TEXT, authorization TEXT);")
 	cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS history_index ON history(signature);")
 	sqlite.row_factory = sqlite3.Row
 	sqlite.commit()
@@ -197,7 +197,7 @@ class TaskExecutioner(threading.Thread):
 			if not error:
 				sqlite = initDB()
 				cursor = sqlite.cursor()
-				cursor.execute("INSERT OR REPLACE INTO history(signature, autorization) VALUES(?,?);", (sig, auth))
+				cursor.execute("INSERT OR REPLACE INTO history(signature, authorization) VALUES(?,?);", (sig, auth))
 				sqlite.commit()
 				sqlite.close()
 			TaskExecutioner.LOCK.release()
