@@ -70,11 +70,13 @@ if [[ "$choice" =~ ^(yes|y|Y) ]]; then
     sudo cp nginx-lys /etc/nginx/sites-available
     sudo ln -sf /etc/nginx/sites-available/nginx-lys /etc/nginx/sites-enabled
     sudo service nginx restart
+    echo "done"
 fi
 
 chmod +x bash/activate
-
 cp bash/lys ~
 cd ~
 chmod +x lys
-echo "done"
+
+echo
+echo "setup finished"
