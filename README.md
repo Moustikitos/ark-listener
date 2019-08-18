@@ -57,7 +57,7 @@ cd ~/ark-listener
 pm2 start app.json
 ```
 
-### In production mode (still under developement)
+### In production mode
 
 ```bash
 ~/ark-listener/bash/activate
