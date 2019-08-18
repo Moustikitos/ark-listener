@@ -52,18 +52,16 @@ ark-listener/bash/activate
 Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
 
 ```bash
-cd ~
-ark-listener/bash/activate
-cd ark-listener
+~/ark-listener/bash/activate
+cd ~/ark-listener
 pm2 start app.json
 ```
 
 ### In production mode (still under developement)
 
 ```bash
-cd ~
-ark-listener/bash/activate
-./lys start-listening
+~/ark-listener/bash/activate
+~/lys start-listening
 ```
 
 ## Where is stored code to execute ?
