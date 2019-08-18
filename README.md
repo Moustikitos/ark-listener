@@ -54,6 +54,7 @@ Your listener have to be white-listed on blockchain relay. Execute `./lys public
 ```bash
 cd ~
 ark-listener/bash/activate
+cd ark-listener
 pm2 start app.json
 ```
 
