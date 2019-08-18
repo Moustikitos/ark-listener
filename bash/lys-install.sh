@@ -61,9 +61,9 @@ pip install -r requirements.txt -q
 echo "done"
 
 # installing zen command
+echo
 read -p "Would you like to configure nginx? [y/N]: " choice
 if [[ "$choice" =~ ^(yes|y|Y) ]]; then
-    echo
     echo installing lys server
     echo =====================
     sudo rm /etc/nginx/sites-enabled/nginx-lys
