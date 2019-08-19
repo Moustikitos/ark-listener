@@ -13,9 +13,6 @@ import lystener
 from collections import OrderedDict
 from lystener import logMsg, loadJson, initDB, configparser, TaskExecutioner
 
-# starting 3 threads 
-DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
-
 # create the application instance 
 app = flask.Flask(__name__)
 app.config.update(
@@ -53,8 +50,9 @@ def index():
 def execute(module, name):
 
 	if flask.request.method == "POST":
+		payload = json.loads(flask.request.data)
 		# parse data as json object and try to get the content of `data` field
-		data = json.loads(flask.request.data).get("data", False)
+		data = payload.get("data", False)
 		# check the data sent by webhook
 		if not data:
 			logMsg("no data received")
@@ -68,8 +66,9 @@ def execute(module, name):
 		webhook = loadJson("%s.json" % authorization)
 		half_token = webhook.get("token", 32*" ")[:32]
 		if authorization == "?" or half_token != authorization:
-			logMsg("not autorized here\n%s" % json.dumps(data, indent=2))
-			return json.dumps({"success": False, "message": "not autorized here"})
+			msg = "not authorized here\n%s" % json.dumps(data, indent=2)
+			logMsg(msg)
+			return json.dumps({"success": False, "message": msg})
 
 		# use sqlite database to check if data already parsed once
 		cursor = connect()
@@ -87,11 +86,15 @@ def execute(module, name):
 		if cursor.fetchone()[0] != 0:
 			logMsg("data already parsed")
 			return json.dumps({"success": False, "message": "data already parsed"})
+		# else put the job to task execution
 		else:
-			logMsg("data autorized - %s" % authorization)
+			event = payload.get("event", "?")
+			timestamp = payload.get("timestamp", "?")
+			msg = "data authorized - %s\n\t%s:%s" % (authorization, timestamp, event)
+			logMsg(msg)
 			TaskExecutioner.JOB.put([module, name, data, signature, authorization])
-			return json.dumps({"success": True, "message": "data autorized"})
-		
+			return json.dumps({"success": True, "message": msg})
+
 
 @app.teardown_appcontext
 def close(*args, **kw):

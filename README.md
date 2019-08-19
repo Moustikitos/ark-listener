@@ -17,7 +17,7 @@ Ark core webhooks trigger POST requests containing data to a targeted peer. This
 
 If found, `module.function` will be executed with data embeded in the POST request.
 
-## Install
+## Install development version
 
 ```bash
  bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)

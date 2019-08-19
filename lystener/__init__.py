@@ -191,7 +191,7 @@ class TaskExecutioner(threading.Thread):
 				else:
 					msg = "python definition %s not found in %s" % (name, module)
 
-			# 
+			# daemon waits here to log results, update database and clean memory
 			TaskExecutioner.LOCK.acquire()
 			logMsg(msg)
 			if not error:
@@ -200,7 +200,6 @@ class TaskExecutioner(threading.Thread):
 				cursor.execute("INSERT OR REPLACE INTO history(signature, authorization) VALUES(?,?);", (sig, auth))
 				sqlite.commit()
 				sqlite.close()
-			TaskExecutioner.LOCK.release()
 
 			# remove the module if all jobs done
 			# so if code is modified it will be updated without a listener restart
@@ -214,3 +213,7 @@ class TaskExecutioner(threading.Thread):
 					else:
 						sys.modules.pop(obj.__name__, False)
 						del obj
+			TaskExecutioner.LOCK.release()
+
+# starting 3 threads 
+DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
