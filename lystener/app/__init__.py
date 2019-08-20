@@ -1,6 +1,7 @@
 # -*- encoding:utf-8 -*-
 # © Toons
 
+import io
 import os
 import re
 import sys

@@ -174,12 +174,14 @@ class TaskExecutioner(threading.Thread):
 			module, name, data, sig, auth = TaskExecutioner.JOB.get()
 			# import asked module
 			try:
-				obj = import_module("lystener." + module)
+				name = "lystener."+module
+				if name not in sys.modules:
+					obj = import_module(name)
+					TaskExecutioner.MODULES.add(obj)
 			except ImportError as exception:
 				msg = "%r\ncan not import python module %s" % (exception, module)
 			# get asked function and execute it with data
 			else:
-				TaskExecutioner.MODULES.add(obj)
 				func = getattr(obj, name, False)
 				if func:
 					try:
@@ -216,5 +218,18 @@ class TaskExecutioner(threading.Thread):
 						del obj
 			TaskExecutioner.LOCK.release()
 
-# starting 3 threads 
+
+# start 3 threads 
 DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
+# import plugins on startup
+with io.open(os.path.join(ROOT, "startup.import")) as in_:
+	for name in [l for l in in_.read().split("\n") if l != "" and "#" not in l]:
+		logMsg("loading %s plugin..." % name)
+		try:
+			import_module("lystener."+name)
+		except Exception as exception:
+			logMsg("%r\nerror importing plugin %s" % (exception, name))
+		else:
+			logMsg("%s plugin loaded\n" % name)
+
+
