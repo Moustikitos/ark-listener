@@ -52,12 +52,18 @@ ark-listener/bash/activate
 Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
 
 ```bash
-~/ark-listener/bash/activate
 cd ~/ark-listener
 pm2 start app.json
 ```
 
 ### In production mode
+
+```bash
+cd ~/ark-listener
+pm2 start srv.json
+```
+
+or
 
 ```bash
 ~/ark-listener/bash/activate
@@ -66,7 +72,7 @@ pm2 start app.json
 
 ## Where is stored code to execute ?
 
-The ark-listener tree contains a `modules` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `modules.pth` file and `lystener` will be able to find it.
+The ark-listener tree contains a `plugins` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `package.pth` file and `lystener` will be able to find it.
 
 ## How can I check deployed listeners ?
 
