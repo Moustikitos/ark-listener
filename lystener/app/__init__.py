@@ -1,4 +1,5 @@
 # -*- encoding:utf-8 -*-
+# © Toons
 
 import os
 import re
@@ -42,7 +43,6 @@ def index():
 	return flask.render_template("listener.html",
 		counts=dict(cursor.execute("SELECT authorization, count(*) FROM history GROUP BY authorization").fetchall()),
 		webhooks=json_list,
-		tinies={}
 	)
 
 

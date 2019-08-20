@@ -1,4 +1,5 @@
 # -*- encoding:utf-8 -*-
+# © Toons
 
 import io
 import os
@@ -41,11 +42,11 @@ VALID_URL = re.compile(
 )
 
 # add the modules folder to the package path
-__path__.append(os.path.abspath(os.path.join(ROOT, "modules")))
+__path__.append(os.path.abspath(os.path.join(ROOT, "plugins")))
 
 # add custom modules pathes from modules.pth file
 # targeted python code could be anywhere where user can access
-pathfile = os.path.join(ROOT, "modules.pth")
+pathfile = os.path.join(ROOT, "package.pth")
 if os.path.exists(pathfile):
 	with io.open(pathfile) as pathes:
 		comment = re.compile(r"^[\s]*#.*")
