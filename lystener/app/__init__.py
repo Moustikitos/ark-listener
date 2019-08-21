@@ -91,7 +91,7 @@ def execute(module, name):
 		else:
 			event = payload.get("event", "?")
 			timestamp = payload.get("timestamp", "?")
-			msg = "data authorized - %s\n\t%s:%s" % (authorization, timestamp, event)
+			msg = "data authorized - %s\n    %s:%s --> %s.%s" % (authorization, timestamp, event, module, name)
 			logMsg(msg)
 			TaskExecutioner.JOB.put([module, name, data, signature, authorization])
 			return json.dumps({"success": True, "message": msg})
