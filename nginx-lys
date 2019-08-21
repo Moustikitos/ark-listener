@@ -1,7 +1,6 @@
 server {
     listen 80;
-
-    location /listeners  {
+    location /  {
         proxy_pass http://127.0.0.1:5001;
     }
 }
