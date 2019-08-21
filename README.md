@@ -40,16 +40,16 @@ ark-listener/bash/activate
 # using a custom webhook peer
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 -w http://dpos.arky-delegate.info:4004
 
-# if amount >= 25 arks and vendorField starting with `sc:`
+# if amount >= 25 arks or vendorField starting with `sc:`
 # using a custom webhook peer
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
 ## Launch listener
 
-### For testing purposes
+Your listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
 
-Your listener have to be white-listed on blockchain relay. Execute `./lys public-ip` to get your listener ip address.
+### For testing purposes
 
 ```bash
 cd ~/ark-listener
@@ -73,6 +73,10 @@ or
 ## Where is stored code to execute ?
 
 The ark-listener tree contains a `plugins` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `package.pth` file and `lystener` will be able to find it.
+
+There are two way for the plugin to be loaded :
+  * when event is triggered, once execution finished plugin is cleaned from memory. A plugin can be updated without server restart
+  * on server start. The plugin name have to be added to `startup.import` file.
 
 ## How can I check deployed listeners ?
 
