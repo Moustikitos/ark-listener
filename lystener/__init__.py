@@ -223,14 +223,3 @@ class TaskExecutioner(threading.Thread):
 
 # start 3 threads 
 DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
-
-# import plugins on startup
-with io.open(os.path.join(ROOT, "startup.import")) as in_:
-	for name in [l for l in in_.read().split("\n") if l != "" and "#" not in l]:
-		logMsg("loading %s plugin..." % name)
-		try:
-			import_module("lystener."+name)
-		except Exception as exception:
-			logMsg("%r\nerror importing plugin %s" % (exception, name))
-		else:
-			logMsg("%s plugin loaded\n" % name)

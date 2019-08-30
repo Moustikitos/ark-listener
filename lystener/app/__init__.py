@@ -12,6 +12,7 @@ import hashlib
 import requests
 import lystener
 
+from importlib import import_module
 from collections import OrderedDict
 from lystener import logMsg, loadJson, initDB, configparser, TaskExecutioner
 
@@ -31,6 +32,17 @@ app.config.update(
 	# 
 	TEMPLATES_AUTO_RELOAD = True,
 )
+
+# import plugins on startup
+with io.open(os.path.join(lystener.ROOT, "startup.import")) as in_:
+	for name in [l for l in in_.read().split("\n") if l != "" and "#" not in l]:
+		logMsg("loading %s plugin..." % name)
+		try:
+			import_module("lystener."+name)
+		except Exception as exception:
+			logMsg("%r\nerror importing plugin %s" % (exception, name))
+		else:
+			logMsg("%s plugin loaded\n" % name)
 
 
 @app.route("/")

@@ -1,6 +1,7 @@
 __requirement__ = [
 	"dposlib"
 ]
+__json__ = "%s.param" % os.path.basename(__file__)
 
 import os
 import json
@@ -15,28 +16,36 @@ rest.use("ark")
 
 KEYS = {}
 SECOND_KEYS = {}
-try:
-	INFO = rest.GET.api.delegates.__getattr__(lystener.input("delegate username> "))()["data"]
-	while KEYS.get("publicKey", None) != INFO["publicKey"]:
-		KEYS = dposlib.core.crypto.getKeys(getpass.getpass("    passphrase: "))
-	while SECOND_KEYS.get("publicKey", None) != INFO.get("secondPublicKey", None):
-		SECOND_KEYS = dposlib.core.crypto.getKeys(getpass.getpass("    second passphrase: "))
-except KeyboardInterrupt:
-	raise Exception("'%s' plugin initialization failed" % os.path.basename(__file__))
-else:
-	dposlib.core.Transaction._publicKey = KEYS["publicKey"]
-	dposlib.core.Transaction._privateKey = KEYS["privateKey"]
-	dposlib.core.Transaction._secondPrivateKey = SECOND_KEYS.get("secondPrivateKey", None)
+
+def loadKeys(username, params):
+	params = loadJson(JSON_FILE, folder=lystener.DATA)
+	secret = parameters.pop("secret", False)
+	secondSecret = parameters.pop("secondSecret", False)
+	dumpJson(params, JSON_FILE, folder=lystener.DATA)		
+
+	try:
+		INFO = rest.GET.api.delegates.__getattr__(username)()["data"]
+		while KEYS.get("publicKey", None) != INFO["publicKey"]:
+			KEYS = dposlib.core.crypto.getKeys(secret)
+		while SECOND_KEYS.get("publicKey", None) != INFO.get("secondPublicKey", None):
+			SECOND_KEYS = dposlib.core.crypto.getKeys(secondSecret)
+	except KeyboardInterrupt:
+		raise Exception("'%s' plugin initialization failed" % os.path.basename(__file__))
+	else:
+		dposlib.core.Transaction._publicKey = KEYS["publicKey"]
+		dposlib.core.Transaction._privateKey = KEYS["privateKey"]
+		dposlib.core.Transaction._secondPublicKey = SECOND_KEYS.get("publicKey", None)
+		dposlib.core.Transaction._secondPrivateKey = SECOND_KEYS.get("privateKey", None)
 
 
 def voteRefund(data):
-	params = loadJson("voteRefund.param", folder=lystener.DATA)		
+	params = loadJson(JSON_FILE, folder=lystener.DATA)		
 	voter_address = dposlib.core.crypto.getAddress(data["senderPublicKey"])
 	vote = data["asset"]["votes"][0]
 	sign, vote = vote[0], vote[1:]
 	
 	if vote == INFO["publicKey"]:
-		if sign = "+"
+		if sign == "+":
 			# create a refund transaction
 			refund = dposlib.core.Transaction(
 				type = 0,
