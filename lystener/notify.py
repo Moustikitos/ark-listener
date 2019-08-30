@@ -1,7 +1,7 @@
 import os
 
 import lystener
-from lystener import loadJson, cipher, rest
+from lystener import loadJson, rest
 
 
 def send(title, body):
