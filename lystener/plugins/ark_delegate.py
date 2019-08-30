@@ -1,7 +1,7 @@
 __requirement__ = [
 	"dposlib"
 ]
-__json__ = "%s.param" % os.path.basename(__file__)
+__json__ = "%s.param" % os.path.basename(__name__)
 
 import os
 import json
@@ -18,10 +18,10 @@ KEYS = {}
 SECOND_KEYS = {}
 
 def loadKeys(username, params):
-	params = loadJson(JSON_FILE, folder=lystener.DATA)
+	params = loadJson(__json__, folder=lystener.DATA)
 	secret = parameters.pop("secret", False)
 	secondSecret = parameters.pop("secondSecret", False)
-	dumpJson(params, JSON_FILE, folder=lystener.DATA)		
+	dumpJson(params, __json__, folder=lystener.DATA)		
 
 	try:
 		INFO = rest.GET.api.delegates.__getattr__(username)()["data"]
@@ -39,7 +39,7 @@ def loadKeys(username, params):
 
 
 def voteRefund(data):
-	params = loadJson(JSON_FILE, folder=lystener.DATA)		
+	params = loadJson(__json__, folder=lystener.DATA)		
 	voter_address = dposlib.core.crypto.getAddress(data["senderPublicKey"])
 	vote = data["asset"]["votes"][0]
 	sign, vote = vote[0], vote[1:]
