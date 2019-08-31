@@ -12,26 +12,52 @@ def createBase(secret, encoding="utf-8"):
 	unused = list(range(256))
 	result = bytearray()
 	while len(result) < 255:
-		result.append(unused.pop(i%len(unused)) for i in hashlib.sha512(secret).digest())
+		result.extend(unused.pop(i%len(unused)) for i in hashlib.sha512(secret).digest())
 		secret = result[:]
 	return result
 
 
-def encrypt(msg, base, encoding="utf-8", salt_size=256):
+def encrypt(msg, base, encoding="utf-8", salt_size=None):
+	s = 0 if not salt_size else salt_size
 	msg = msg if isinstance(msg, bytes) else msg.encode(encoding, "replace")
-	result = bytearray()
+	encrypted = bytearray()
 	n = len(base)
 	for i in bytearray(msg):
-		a = int.from_bytes(result[-salt_size:], "big")
-		result.append(base[(i+a)%n])
-	return result
+		a = int.from_bytes(hashlib.md5(encrypted[-s:]).digest(), "big")
+		encrypted.append(base[(i+a) % n])
+		if a % 5:
+			encrypted.append(a % n)
+	return encrypted
 
 
-def decrypt(encrypted, base, encoding="utf-8", salt_size=256):
-	result = bytearray()
+def decrypt(encrypted, base, encoding="utf-8", salt_size=None):
+	s = 0 if not salt_size else salt_size
+	msg, _enc = bytearray(), bytearray()
 	base = list(base)
 	n = len(base)
+	jump = False
 	for e in encrypted:
-		a = int.from_bytes(encrypted[:len(result)][-salt_size:], "big")
-		result.append((base.index(e)-a)%n)
-	return result.decode(encoding, "replace")
+		if jump:
+			_enc.append(e)
+			jump = False
+		else:
+			a = int.from_bytes(hashlib.md5(_enc[-s:]).digest(), "big")
+			msg.append((base.index(e)-a) % n)
+			_enc.append(e)
+			if a % 5:
+				jump = True
+	return msg.decode(encoding, "replace")
+
+
+from collections import Counter
+import functools
+
+def computeIc(encrypted):
+	n = len(encrypted)
+	d = n*(n-1)
+	result = 0
+
+	for v in Counter(list(encrypted)).values():
+		result += v*(v-1)/d
+
+	return result
