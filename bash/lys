@@ -146,12 +146,16 @@ def destroy_listener(args={}, **options):
 	"""
 	unlink blockchain event from a id list.
 	"""
+	pairs = {}
+	for name in [n for n in os.listdir(lystener.JSON) if n.endswith(".json")]:
+		data = lystener.loadJson(name)
+		if "id" in data:
+			pairs[data["id"]] = name.replace(".json", "")
 
-	listeners = [name.replace(".json", "") for name in os.listdir(lystener.JSON) if name.endswith(".json")]
-	id_ = lystener.chooseItem("Select listener to destroy:", *listeners)
+	id_ = lystener.chooseItem("Select listener to destroy:", *[v for v in pairs.keys() if v])
 	if not id_: return
+	json_name = "%s.json" % pairs[id_]
 
-	json_name = "%s.json" % id_
 	# load webhook configuration
 	webhook = lystener.loadJson(json_name)
 	# condition bellow checks if webhook configurations is found

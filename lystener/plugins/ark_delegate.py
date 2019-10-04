@@ -16,6 +16,7 @@ KEYS = {}
 SECOND_KEYS = {}
 JSON_FILE = "%s.param" % os.path.basename(__name__)
 
+
 def loadKeys(username, params):
 	global INFO
 

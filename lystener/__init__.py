@@ -178,7 +178,7 @@ class TaskExecutioner(threading.Thread):
 				if mod not in sys.modules:
 					obj = import_module(mod)
 					TaskExecutioner.MODULES.add(obj)
-			except ImportError as exception:
+			except Exception as exception:
 				error = True
 				msg = "%r\ncan not import python module %s" % (exception, module)
 			# get asked function and execute it with data
