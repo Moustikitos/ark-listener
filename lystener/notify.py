@@ -1,3 +1,6 @@
+# -*- encoding:utf-8 -*-
+# © THOORENS Bruno
+
 import os
 
 import lystener
@@ -47,3 +50,6 @@ curl -X "POST" "https://api.twilio.com/2010-04-01/Accounts/%(sid)s/Messages.json
 	if freemobile != {}:
 		freemobile["msg"] = title + ":\n" + body
 		rest.GET.sendmsg(peer="https://smsapi.free-mobile.fr", **freemobile)
+
+# slack notification
+# https://api.slack.com/methods/chat.postMessage

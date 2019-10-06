@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-# (c) THOORENS Bruno
+# © THOORENS Bruno
 
 import future
 import hashlib

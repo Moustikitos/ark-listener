@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-# © Toons
+# © THOORENS Bruno
 
 import io
 import os
