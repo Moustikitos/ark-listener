@@ -63,8 +63,15 @@ def index():
 def execute(module, name):
 
 	if flask.request.method == "POST":
-		payload = json.loads(flask.request.data)
-		# parse data as json object and try to get the content of `data` field
+
+		# try to load data as json. If not possible then it is a junk POST
+		# request. ValueError is raised when json can not decode data
+		try:
+			payload = json.loads(flask.request.data)
+		except ValueError:
+			return json.dumps({"success": False, "message": "POST request not allowed here"})
+
+		# get the content of `data` field
 		data = payload.get("data", False)
 		# check the data sent by webhook
 		if not data:
