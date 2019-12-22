@@ -1,6 +1,6 @@
 wheel
 docopt
+future
 requests
 flask
 gunicorn
-cryptography
