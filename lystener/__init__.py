@@ -10,6 +10,7 @@ import json
 import socket
 import sqlite3
 import datetime
+import traceback
 import threading
 
 # save python familly
@@ -189,7 +190,7 @@ class TaskExecutioner(threading.Thread):
 						response = func(data)
 					except Exception as exception:
 						error = True
-						msg = "%s response:\n%s" % (name, "%r"%exception)
+						msg = "%s response:\n%s\n%s" % (name, "%r"%exception, traceback.format_exc())
 					else:
 						msg = "%s response:\n%s" % (name, response)
 				else:
