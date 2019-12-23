@@ -6,6 +6,7 @@ import future
 import hashlib
 
 from builtins import int
+from collections import Counter
 
 
 int_from_bytes = \
@@ -60,9 +61,6 @@ def decrypt(encrypted, base, encoding="utf-8"):
 
 
 # https://fr.m.wikipedia.org/wiki/Indice_de_co%C3%AFncidence
-from collections import Counter
-import functools
-
 def computeIc(encrypted):
     n = len(encrypted)
     d = n*(n-1)
