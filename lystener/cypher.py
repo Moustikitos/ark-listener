@@ -5,7 +5,7 @@ import sys
 import future
 import hashlib
 
-from builtins import int
+from builtins import int, bytearray
 from collections import Counter
 
 
@@ -33,10 +33,11 @@ def createBase(secret, encoding="utf-8"):
 def encrypt(msg, base, encoding="utf-8"):
     msg = msg if isinstance(msg, bytes) else msg.encode(encoding, "replace")
     encrypted = bytearray()
+    base = list(base)
     n = len(base)
     for i in bytearray(msg):
         a = int.from_bytes(hashlib.md5(encrypted).digest(), "big")
-        encrypted.append(base[(int_from_bytes(i)+a) % n])
+        encrypted.append(base[(i+a) % n])
         if a % 5:
             encrypted.append(a % n)
     return encrypted
@@ -53,7 +54,7 @@ def decrypt(encrypted, base, encoding="utf-8"):
             jump = False
         else:
             a = int.from_bytes(hashlib.md5(_enc).digest(), "big")
-            msg.append((base.index(int_from_bytes(e))-a) % n)
+            msg.append((base.index(e)-a) % n)
             _enc.append(e)
             if a % 5:
                 jump = True
