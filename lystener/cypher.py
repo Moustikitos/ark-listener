@@ -40,10 +40,11 @@ def encrypt(msg, base, encoding="utf-8"):
         encrypted.append(base[(i+a) % n])
         if a % 5:
             encrypted.append(a % n)
-    return encrypted
+    return bytes(encrypted)
 
 
 def decrypt(encrypted, base, encoding="utf-8"):
+    encrypted = bytearray(encrypted)
     msg, _enc = bytearray(), bytearray()
     base = list(base)
     n = len(base)
