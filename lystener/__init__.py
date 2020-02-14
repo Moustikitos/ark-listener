@@ -209,6 +209,10 @@ class TaskExecutioner(threading.Thread):
                 sqlite.commit()
                 sqlite.close()
 
+            # remove ongoing task signature
+            if sig in TaskExecutioner.ONGOING:
+                TaskExecutioner.ONGOING.remove(sig)
+
             # remove the module if all jobs done
             # so if code is modified it will be updated without a listener restart
             if TaskExecutioner.JOB.empty():
@@ -221,10 +225,8 @@ class TaskExecutioner(threading.Thread):
                     else:
                         sys.modules.pop(obj.__name__, False)
                         del obj
-            TaskExecutioner.LOCK.release()
 
-            if sig in TaskExecutioner.ONGOING:
-                TaskExecutioner.ONGOING.remove(sig)
+            TaskExecutioner.LOCK.release()
 
 
 # start 3 threads 

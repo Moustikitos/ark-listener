@@ -113,6 +113,7 @@ def execute(module, name):
             TaskExecutioner.JOB.put([module, name, data, signature, authorization])
             return json.dumps({"success": True, "message": msg})
         else:
+            logMsg("data on going to be parsed")
             return json.dumps({"success": False, "message": "data on going to be parsed"})
 
 
