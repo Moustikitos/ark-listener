@@ -155,6 +155,7 @@ class TaskExecutioner(threading.Thread):
     JOB = queue.Queue()
     LOCK = threading.Lock()
     STOP = threading.Event()
+    ONGOING = set([])
     MODULES = set([])
 
     @staticmethod
@@ -178,6 +179,8 @@ class TaskExecutioner(threading.Thread):
                 if mod not in sys.modules:
                     obj = import_module(mod)
                     TaskExecutioner.MODULES.add(obj)
+                else:
+                    obj = sys.modules[mod]
             except Exception as exception:
                 error = True
                 msg = "%r\ncan not import python module %s" % (exception, module)
@@ -219,6 +222,9 @@ class TaskExecutioner(threading.Thread):
                         sys.modules.pop(obj.__name__, False)
                         del obj
             TaskExecutioner.LOCK.release()
+
+            if sig in TaskExecutioner.ONGOING:
+                TaskExecutioner.ONGOING.remove(sig)
 
 
 # start 3 threads 
