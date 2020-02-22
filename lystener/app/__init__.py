@@ -97,6 +97,7 @@ def execute(module, name):
             raw = re.sub(r"[\s]*", "", json.dumps(data))
             h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
             signature = h.decode() if isinstance(h, bytes) else h
+
         # check if signature already in database
         cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
         # exit if signature found in database

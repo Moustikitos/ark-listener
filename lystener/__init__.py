@@ -12,18 +12,16 @@ import datetime
 import traceback
 import threading
 
+from importlib import import_module
+
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
 if PY3:
     import queue
-    import configparser
     input = input
 else:
     import Queue as queue
-    import ConfigParser as configparser
     input = raw_input
-
-from importlib import import_module
 
 
 # configuration pathes
@@ -175,12 +173,8 @@ class TaskExecutioner(threading.Thread):
             module, name, data, sig, auth = TaskExecutioner.JOB.get()
             # import asked module
             try:
-                mod = "lystener."+module
-                if mod not in sys.modules:
-                    obj = import_module(mod)
-                    TaskExecutioner.MODULES.add(obj)
-                else:
-                    obj = sys.modules[mod]
+                obj = import_module("lystener."+module)
+                TaskExecutioner.MODULES.add(obj)
             except Exception as exception:
                 error = True
                 msg = "%r\ncan not import python module %s" % (exception, module)
@@ -202,7 +196,7 @@ class TaskExecutioner(threading.Thread):
             # daemon waits here to log results, update database and clean memory
             TaskExecutioner.LOCK.acquire()
             logMsg(msg)
-            if not error:
+            if not error and response.get("success", False):
                 sqlite = initDB()
                 cursor = sqlite.cursor()
                 cursor.execute("INSERT OR REPLACE INTO history(signature, authorization) VALUES(?,?);", (sig, auth))
@@ -229,5 +223,5 @@ class TaskExecutioner(threading.Thread):
             TaskExecutioner.LOCK.release()
 
 
-# start 3 threads 
+# start 3 threads
 DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
