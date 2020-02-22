@@ -28,6 +28,7 @@ def checkIfForging(data):
     usernames = params.get("usernames", {})
     delegate_number = params.get("active_delegates", 51)
     notification_delay = params.get("notification_delay", 10) * 60 # in minutes
+    peer = params.get("peer", "https://explorer.ark.io:8443")
     messages = []
 
     for pkey in delegates:
@@ -49,17 +50,17 @@ def checkIfForging(data):
 
             if diff > 1:
                 rank = rest.GET.api.delegates(
-                    pkey,
-                    peer="https://explorer.ark.io:8443",
+                    pkey, peer=peer
                 ).get("data", {}).get("rank", -1)
                 if not rank:
                     return {"success": False, "message": "delegate not found"}
                 send_notification = (rank <= delegate_number) and \
                                     (delay >= notification_delay)
                 # do the possible checks
-                if rank > delegate_number and delay >= notification_delay:
+                if rank > delegate_number:
                     msg = "%s is not in forging position" % pkey
-                    notify.send("[forging notification]", msg)
+                    if delay >= notification_delay:
+                        notify.send("[forging notification]", msg)
                     last_block["notification"] = now
                 elif diff == 2:
                     msg = "%s just missed a block" % pkey
@@ -75,7 +76,7 @@ def checkIfForging(data):
                         last_block["notification"] = now
                     last_block["missed"] = missed + 1
                     success = True
-            elif diff <= 1 and missed > 0:
+            elif diff <= 1 and (missed > 0 or last_notification > 0):
                 msg = "%s is forging again" % pkey
                 notify.send("[forging notification]", msg)
                 last_block.pop("missed", False)
@@ -85,7 +86,7 @@ def checkIfForging(data):
                 # default message
                 msg = "%s is forging (last round=%d | current round=%d)" % \
                       (pkey, last_round, current_round)
-            
+
             # dump last forged block info
             dumpJson(last_block, "%s.last.block" % pkey, folder=lystener.DATA)
             messages.append(msg)
