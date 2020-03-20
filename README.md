@@ -74,9 +74,11 @@ The listening server redirects browser to listener details page.
 ```
 
 ```
+Usage:
    lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
    lys destroy-listener
    lys start-listening [-p <port>]
+   lys restart-listeners
    lys stop-listening
    lys public-ip
    lys show-log
@@ -86,10 +88,11 @@ Options:
 -p --port=<port>           : the port used for listening srv [default: 5001]
 
 Subcommands:
-   deploy-listener  : link a webhook <event> with a python <function> 
-   destroy-listener : unlink webhook <event> from python <function>
-   start-listening  : start/restart listener server
-   stop-listening   : stop listener server
-   public-ip        : get public ip
-   show-log         : show service log
+   deploy-listener   : link a webhook <event> with a python <function>
+   destroy-listener  : unlink webhook <event> from python <function>
+   start-listening   : start/restart listener server
+   restart-listeners : restart listener server
+   stop-listening    : stop listener server
+   public-ip         : get public ip
+   show-log          : show service log
 ```

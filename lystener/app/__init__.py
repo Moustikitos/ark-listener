@@ -13,6 +13,7 @@ from importlib import import_module
 from collections import OrderedDict
 from lystener import logMsg, loadJson, initDB, TaskExecutioner
 
+
 # create the application instance
 app = flask.Flask(__name__)
 app.config.update(
@@ -114,9 +115,13 @@ def execute(module, name):
         cursor.execute(
             "SELECT count(*) FROM history WHERE signature = ?", (signature,)
         )
+
+        # first get TaskExecutioner lock
+        TaskExecutioner.LOCK.acquire()
         # exit if signature found in database
         if cursor.fetchone()[0] != 0:
             logMsg("data already parsed")
+            TaskExecutioner.LOCK.release()
             return json.dumps(
                 {"success": False, "message": "data already parsed"}
             )
@@ -131,9 +136,11 @@ def execute(module, name):
             TaskExecutioner.JOB.put(
                 [module, name, data, signature, authorization]
             )
+            TaskExecutioner.LOCK.release()
             return json.dumps({"success": True, "message": msg})
         else:
             logMsg("data on going to be parsed")
+            TaskExecutioner.LOCK.release()
             return json.dumps(
                 {"success": False, "message": "data on going to be parsed"}
             )

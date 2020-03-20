@@ -49,7 +49,7 @@ After=network.target
 User=${USER}
 WorkingDirectory=${HOME}/.local/share/ark-listener
 Environment=PYTHONPATH=${PYTHONPATH}:${HOME}/ark-listener
-ExecStart=${HOME}/.local/share/ark-listener/venv/bin/gunicorn --bind=0.0.0.0:%(port)s --workers=5 lystener.app:app --access-logfile -
+ExecStart=${HOME}/.local/share/ark-listener/venv/bin/gunicorn lystener.app:app --bind=0.0.0.0:%(port)s --workers=5 --access-logfile -
 Restart=always
 
 [Install]
@@ -67,7 +67,6 @@ def start_listening(args={}, **options):
         "sudo {echo -e '%s' /etc/systemd/system/lys.service} 2> /dev/null" %
         (SERVICE % options)
     )
-
     os.system("sudo systemctl daemon-reload")
     if not os.system("sudo systemctl restart lys"):
         os.system("sudo systemctl start lys")

@@ -4,7 +4,7 @@
 import os
 
 import lystener
-from lystener import loadJson, rest
+from lystener import loadJson, rest, logMsg
 
 
 def send(title, body):
@@ -49,7 +49,7 @@ curl -X "POST" "https://api.twilio.com/2010-04-01/Accounts/%(sid)s/Messages.json
     freemobile = loadJson("freemobile.notify", lystener.DATA)
     if freemobile != {}:
         freemobile["msg"] = title + ":\n" + body
-        rest.GET.sendmsg(peer="https://smsapi.free-mobile.fr", **freemobile)
+        logMsg("%r" % rest.GET.sendmsg(peer="https://smsapi.free-mobile.fr", **freemobile))
 
 # slack notification
 # https://api.slack.com/methods/chat.postMessage
