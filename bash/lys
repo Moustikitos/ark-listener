@@ -25,9 +25,7 @@ Subcommands:
    show-log          : show service log
 """
 
-
 import os
-import io
 import sys
 import docopt
 
@@ -63,10 +61,8 @@ def public_ip(args={}, **options):
 
 
 def start_listening(args={}, **options):
-    os.system(
-        "sudo {echo -e '%s' /etc/systemd/system/lys.service} 2> /dev/null" %
-        (SERVICE % options)
-    )
+    os.system('echo "%s" > ~/lys.service' % (SERVICE % options))
+    os.system("sudo mv ~/lys.service /etc/systemd/system")
     os.system("sudo systemctl daemon-reload")
     if not os.system("sudo systemctl restart lys"):
         os.system("sudo systemctl start lys")
