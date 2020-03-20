@@ -23,7 +23,6 @@ else:
     import Queue as queue
     input = raw_input
 
-
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))
 JSON = os.path.abspath(os.path.join(ROOT, ".json"))
@@ -34,7 +33,7 @@ VALID_URL = re.compile(
     r'^https?://'  # http:// or https://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
     r'localhost|'  # localhost...
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
     r'(?::\d+)?'  # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE
 )
@@ -48,7 +47,10 @@ pathfile = os.path.join(ROOT, "package.pth")
 if os.path.exists(pathfile):
     with io.open(pathfile) as pathes:
         comment = re.compile(r"^[\s]*#.*")
-        for path in [p.strip() for p in pathes.read().split("\n") if not comment.match(p)]:
+        for path in [
+            p.strip() for p in pathes.read().split("\n")
+            if not comment.match(p)
+        ]:
             if path != "":
                 __path__.append(os.path.abspath(path))
 
@@ -61,7 +63,7 @@ def getPublicIp():
         # doesn't even have to be reachable
         s.connect(('10.255.255.255', 1))
         PUBLIC_IP = s.getsockname()[0]
-    except:
+    except Exception:
         PUBLIC_IP = '127.0.0.1'
     finally:
         s.close()
@@ -69,7 +71,9 @@ def getPublicIp():
 
 
 def loadJson(name, folder=None):
-    filename = os.path.join(JSON, name if not folder else os.path.join(folder, name))
+    filename = os.path.join(
+        JSON, name if not folder else os.path.join(folder, name)
+    )
     if os.path.exists(filename):
         with io.open(filename) as in_:
             return json.load(in_)
@@ -78,9 +82,13 @@ def loadJson(name, folder=None):
 
 
 def dumpJson(data, name, folder=None):
-    filename = os.path.join(JSON, name if not folder else os.path.join(folder, name))
-    try: os.makedirs(os.path.dirname(filename))
-    except OSError: pass
+    filename = os.path.join(
+        JSON, name if not folder else os.path.join(folder, name)
+    )
+    try:
+        os.makedirs(os.path.dirname(filename))
+    except OSError:
+        pass
     with io.open(filename, "w" if PY3 else "wb") as out:
         json.dump(data, out, indent=4)
 
@@ -97,9 +105,10 @@ def logMsg(msg, logname=None, dated=False):
         stdout = sys.stdout
 
     stdout.write(
-        ">>> " + \
-        ("[%s] " % datetime.datetime.now().strftime("%x %X") if dated else "") + \
-        "%s\n" % msg
+        ">>> " + (
+            "[%s] " % datetime.datetime.now().strftime("%x %X") if dated else
+            ""
+        ) + "%s\n" % msg
     )
     stdout.flush()
 
@@ -177,7 +186,8 @@ class TaskExecutioner(threading.Thread):
                 TaskExecutioner.MODULES.add(obj)
             except Exception as exception:
                 error = True
-                msg = "%r\ncan not import python module %s" % (exception, module)
+                msg = "%r\ncan not import python module %s" % \
+                      (exception, module)
             # get asked function and execute it with data
             else:
                 func = getattr(obj, name, False)
@@ -186,14 +196,17 @@ class TaskExecutioner(threading.Thread):
                         response = func(data)
                     except Exception as exception:
                         error = True
-                        msg = "%s response:\n%s\n%s" % (name, "%r"%exception, traceback.format_exc())
+                        msg = "%s response:\n%s\n%s" % \
+                              (name, "%r" % exception, traceback.format_exc())
                     else:
                         msg = "%s response:\n%s" % (name, response)
                 else:
                     error = True
-                    msg = "python definition %s not found in %s" % (name, module)
+                    msg = "python definition %s not found in %s" % \
+                          (name, module)
 
-            # daemon waits here to log results, update database and clean memory
+            # daemon waits here to log results, update database and clean
+            # memory
             TaskExecutioner.LOCK.acquire()
             logMsg(msg)
             if not error and response.get("success", False):
@@ -207,14 +220,14 @@ class TaskExecutioner(threading.Thread):
             if sig in TaskExecutioner.ONGOING:
                 TaskExecutioner.ONGOING.remove(sig)
 
-            # remove the module if all jobs done
-            # so if code is modified it will be updated without a listener restart
+            # remove the module if all jobs done so if code is modified it
+            # will be updated without a listener restart
             if TaskExecutioner.JOB.empty():
                 error = False
                 while not error:
                     try:
                         obj = TaskExecutioner.MODULES.pop()
-                    except:
+                    except Exception:
                         error = True
                     else:
                         sys.modules.pop(obj.__name__, False)

@@ -15,9 +15,9 @@ def logSomething(data):
 
 def checkIfForging(data):
     success = False
-    ############################
-    # load contract parameters #
-    ############################
+    ###################
+    # load parameters #
+    ###################
     params = loadJson("checkIfForging.param", folder=lystener.DATA)
     # get monitored delegates
     delegates = params.get("delegates", [])
@@ -27,7 +27,7 @@ def checkIfForging(data):
     # get delegate informations
     usernames = params.get("usernames", {})
     delegate_number = params.get("active_delegates", 51)
-    notification_delay = params.get("notification_delay", 10) * 60 # in minutes
+    notification_delay = params.get("notification_delay", 10) * 60  # minutes
     peer = params.get("peer", "https://explorer.ark.io:8443")
     messages = []
 
@@ -42,8 +42,8 @@ def checkIfForging(data):
             missed = last_block.get("missed", 0)
             last_notification = last_block.get("notification", 0)
             # blockchain parameters
-            last_round = last_block["height"] // delegate_number
-            current_round = data["height"] // delegate_number
+            last_round = (last_block["height"] - 1) // delegate_number
+            current_round = (data["height"] - 1) // delegate_number
             diff = current_round - last_round
             now = time.time()
             delay = now - last_notification
@@ -61,21 +61,22 @@ def checkIfForging(data):
                     msg = "%s is not in forging position" % pkey
                     if delay >= notification_delay:
                         notify.send("[forging notification]", msg)
-                    last_block["notification"] = now
+                        last_block["notification"] = now
+                        success = True
                 elif diff == 2:
                     msg = "%s just missed a block" % pkey
                     if send_notification:
                         notify.send("[forging notification]", msg)
                         last_block["notification"] = now
+                        success = True
                     last_block["missed"] = missed + 1
-                    success = True
                 elif diff > 2:
                     msg = "%s is missing blocks (total %d)" % (pkey, missed + 1)
                     if send_notification:
                         notify.send("[forging notification]", msg)
                         last_block["notification"] = now
+                        success = True
                     last_block["missed"] = missed + 1
-                    success = True
             elif diff <= 1 and (missed > 0 or last_notification > 0):
                 msg = "%s is forging again" % pkey
                 notify.send("[forging notification]", msg)
@@ -84,8 +85,7 @@ def checkIfForging(data):
                 success = True
             else:
                 # default message
-                msg = "%s is forging (last round=%d | current round=%d)" % \
-                      (pkey, last_round, current_round)
+                msg = "%s is forging" % pkey
 
             # dump last forged block info
             dumpJson(last_block, "%s.last.block" % pkey, folder=lystener.DATA)

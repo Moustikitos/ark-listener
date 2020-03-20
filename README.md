@@ -3,7 +3,7 @@
 ## Support this project
 
   * [X] Send &#1126; to `AUahWfkfr5J4tYakugRbfow7RWVTK35GPW`
-  * [X] Vote `arky` on [Ark blockchain](https://explorer.ark.io) and [earn &#1126; weekly](http://arky-delegate.info/arky)
+  * [X] Vote `arky` on [Ark blockchain](https://explorer.ark.io) and [earn &#1126; weekly](http://dpos.arky-delegate.info/arky)
 
 ## Supported blockchain
 
@@ -74,12 +74,12 @@ The listening server redirects browser to listener details page.
 ```
 
 ```
-Usage:
    lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
    lys destroy-listener
    lys start-listening [-p <port>]
    lys stop-listening
    lys public-ip
+   lys show-log
 
 Options:
 -w --webhook=<webhook>     : the peer registering the webhook
@@ -91,4 +91,5 @@ Subcommands:
    start-listening  : start/restart listener server
    stop-listening   : stop listener server
    public-ip        : get public ip
+   show-log         : show service log
 ```

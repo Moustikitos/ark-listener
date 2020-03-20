@@ -32,7 +32,10 @@ app.config.update(
 
 # import plugins on startup
 with io.open(os.path.join(lystener.ROOT, "startup.import")) as in_:
-    for name in [l for l in in_.read().split("\n") if l != "" and "#" not in l]:
+    for name in [
+        line for line in in_.read().split("\n")
+        if line != "" and "#" not in line
+    ]:
         logMsg("loading %s plugin..." % name)
         try:
             import_module("lystener."+name)
@@ -45,12 +48,17 @@ with io.open(os.path.join(lystener.ROOT, "startup.import")) as in_:
 @app.route("/")
 def index():
     if os.path.exists(os.path.join(lystener.ROOT, ".json")):
-        json_list = [loadJson(name) for name in os.listdir(os.path.join(lystener.ROOT, ".json")) if name.endswith(".json")]
+        json_list = [
+            loadJson(name) for name in os.listdir(
+                os.path.join(lystener.ROOT, ".json")
+            ) if name.endswith(".json")
+        ]
     else:
         json_list = []
 
     cursor = connect()
-    return flask.render_template("listener.html",
+    return flask.render_template(
+        "listener.html",
         counts=dict(cursor.execute("SELECT authorization, count(*) FROM history GROUP BY authorization").fetchall()),
         webhooks=json_list,
     )
@@ -66,14 +74,18 @@ def execute(module, name):
         try:
             payload = json.loads(flask.request.data)
         except ValueError:
-            return json.dumps({"success": False, "message": "POST request not allowed here"})
+            return json.dumps(
+                {"success": False, "message": "POST request not allowed here"}
+            )
 
         # get the content of `data` field
         data = payload.get("data", False)
         # check the data sent by webhook
         if not data:
             logMsg("no data received")
-            return json.dumps({"success": False, "message": "no data provided"})
+            return json.dumps(
+                {"success": False, "message": "no data provided"}
+            )
         # sort data
         else:
             data = sameDataSort(data)
@@ -92,30 +104,39 @@ def execute(module, name):
         # try to get a signature from data
         signature = data.get("signature", False)
         if not signature:
-            # generate sha 256 hash as signature if no one found 
+            # generate sha 256 hash as signature if no one found
             # remove all trailing spaces, new lines, tabs etc...
             raw = re.sub(r"[\s]*", "", json.dumps(data))
             h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
             signature = h.decode() if isinstance(h, bytes) else h
 
         # check if signature already in database
-        cursor.execute("SELECT count(*) FROM history WHERE signature = ?", (signature,))
+        cursor.execute(
+            "SELECT count(*) FROM history WHERE signature = ?", (signature,)
+        )
         # exit if signature found in database
         if cursor.fetchone()[0] != 0:
             logMsg("data already parsed")
-            return json.dumps({"success": False, "message": "data already parsed"})
+            return json.dumps(
+                {"success": False, "message": "data already parsed"}
+            )
         # else put the job to task execution
         elif signature not in TaskExecutioner.ONGOING:
             event = payload.get("event", "?")
             timestamp = payload.get("timestamp", "?")
-            msg = "data authorized - %s\n    %s:%s --> %s.%s" % (authorization, timestamp, event, module, name)
+            msg = "data authorized - %s\n    %s:%s --> %s.%s" % \
+                  (authorization, timestamp, event, module, name)
             logMsg(msg)
             TaskExecutioner.ONGOING.add(signature)
-            TaskExecutioner.JOB.put([module, name, data, signature, authorization])
+            TaskExecutioner.JOB.put(
+                [module, name, data, signature, authorization]
+            )
             return json.dumps({"success": True, "message": msg})
         else:
             logMsg("data on going to be parsed")
-            return json.dumps({"success": False, "message": "data on going to be parsed"})
+            return json.dumps(
+                {"success": False, "message": "data on going to be parsed"}
+            )
 
 
 @app.teardown_appcontext
@@ -131,7 +152,11 @@ def sameDataSort(data, reverse=False):
         return sorted(data, reverse=reverse)
     elif isinstance(data, dict):
         result = OrderedDict()
-        for key,value in sorted([(k,v) for k,v in data.items()], key=lambda e:e[0], reverse=reverse):
+        for key, value in sorted(
+            [(k, v) for k, v in data.items()],
+            key=lambda e: e[0],
+            reverse=reverse
+        ):
             result[key] = sameDataSort(value, reverse)
         return result
     else:
@@ -150,6 +175,7 @@ def connect():
 @app.context_processor
 def override_url_for():
     return dict(url_for=dated_url_for)
+
 
 def dated_url_for(endpoint, **values):
     if endpoint == 'static':
