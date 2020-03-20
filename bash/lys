@@ -6,6 +6,7 @@ Usage:
    lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
    lys destroy-listener
    lys start-listening [-p <port>]
+   lys restart-listeners
    lys stop-listening
    lys public-ip
    lys show-log
@@ -15,12 +16,13 @@ Options:
 -p --port=<port>           : the port used for listening srv [default: 5001]
 
 Subcommands:
-   deploy-listener  : link a webhook <event> with a python <function> 
-   destroy-listener : unlink webhook <event> from python <function>
-   start-listening  : start/restart listener server
-   stop-listening   : stop listener server
-   public-ip        : get public ip
-   show-log         : show service log
+   deploy-listener   : link a webhook <event> with a python <function>
+   destroy-listener  : unlink webhook <event> from python <function>
+   start-listening   : start/restart listener server
+   restart-listeners : restart listener server
+   stop-listening    : stop listener server
+   public-ip         : get public ip
+   show-log          : show service log
 """
 
 
@@ -61,9 +63,10 @@ def public_ip(args={}, **options):
 
 
 def start_listening(args={}, **options):
-    with io.open(os.path.expanduser("~/ark-listener/lys.service"), "w" if lystener.PY3 else "wb") as service:
-        template = SERVICE % options
-        os.system("sudo {echo -e '%s' /etc/systemd/system/lys.service} 2> /dev/null" % template)
+    os.system(
+        "sudo {echo -e '%s' /etc/systemd/system/lys.service} 2> /dev/null" %
+        (SERVICE % options)
+    )
 
     os.system("sudo systemctl daemon-reload")
     if not os.system("sudo systemctl restart lys"):
@@ -72,6 +75,10 @@ def start_listening(args={}, **options):
 
 def stop_listening(args={}, **options):
     os.system("sudo systemctl stop lys")
+
+
+def restart_listeners(args={}, **options):
+    os.system("sudo systemctl restart lys")
 
 
 def show_log(args={}, **options):
@@ -88,8 +95,12 @@ def deploy_listener(args={}, **options):
     event = args.get("<event>", options.get("event", False))
 
     # build peers and target url
-    webhook_peer = options.get("webhook", "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER)
-    target_url = ("%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) +"/"+ function.replace(".", "/")
+    webhook_peer = options.get(
+        "webhook", "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER
+    )
+    target_url = \
+        ("%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) + \
+        "/" + function.replace(".", "/")
 
     # compute listener condition
     # if only a regexp is givent compute condition on vendorField
@@ -103,13 +114,18 @@ def deploy_listener(args={}, **options):
     # Ark webhook api will manage condition errors
     else:
         conditions = list(
-            {"key":k,"condition":c,"value":v} for k,c,v in zip(
+            {"key": k, "condition": c, "value": v} for k, c, v in zip(
                 args["<field>"], args["<condition>"], args["<value>"]
             )
         )
 
     # create the webhook
-    req = rest.POST.api.webhooks(event=event, peer=webhook_peer, target=target_url, conditions=conditions)
+    req = rest.POST.api.webhooks(
+        event=event,
+        peer=webhook_peer,
+        target=target_url,
+        conditions=conditions
+    )
     # parse request result if no error messages
     if not req.get("except", False):
         webhook = req["data"]
@@ -133,8 +149,12 @@ def destroy_listener(args={}, **options):
         if "id" in data:
             pairs[data["id"]] = name.replace(".json", "")
 
-    id_ = lystener.chooseItem("Select listener to destroy:", *[v for v in pairs.keys() if v])
-    if not id_: return
+    id_ = lystener.chooseItem(
+        "Select listener to destroy:",
+        *[v for v in pairs.keys() if v]
+    )
+    if not id_:
+        return
     json_name = "%s.json" % pairs[id_]
 
     # load webhook configuration
@@ -142,7 +162,7 @@ def destroy_listener(args={}, **options):
     # condition bellow checks if webhook configurations is found
     if webhook.get("peer", False):
         # delete webhook using its id and parent peer
-        rest.DELETE.api.webhooks("%s"%webhook["id"], peer=webhook["peer"])
+        rest.DELETE.api.webhooks("%s" % webhook["id"], peer=webhook["peer"])
         # delete the webhook configuration
         os.remove(os.path.join(lystener.JSON, json_name))
         lystener.logMsg("%s webhook destroyed" % id_)
@@ -155,32 +175,35 @@ def destroy_listener(args={}, **options):
 if __name__ == "__main__":
 
     FILTER = {
-        "--multiple":  lambda value: value,
+        "--multiple": lambda value: value,
         "--condition": lambda value: value,
-        "--field":     lambda value: value,
-        "--value":     lambda value: value,
-        "--webhook":   lambda value: value,
-        "--port":      lambda value: value,
-        "<regexp>":    lambda value: getattr(value, "pattern", value)
+        "--field": lambda value: value,
+        "--value": lambda value: value,
+        "--webhook": lambda value: value,
+        "--port": lambda value: value,
+        "<regexp>": lambda value: getattr(value, "pattern", value)
     }
 
     # will get the first argument which is neither a value neither an option
     def getAction(args):
         for action in [k for k in args if k[0] not in ["-", "<"]]:
-            if args[action] == True:
+            if args[action] is True:
                 return action
         return False
 
     # will rename --multi-word-option to multi_word_option
     def getOptions(args):
         options = {}
-        for option,value in [(k,v) for k,v in args.items() if k.startswith("--") and v != None]:
+        for option, value in [
+            (k, v) for k, v in args.items() if k.startswith("--")
+            and v is not None
+        ]:
             options[option[2:].replace("-", "_")] = value
-        return dict((k,v) for k,v in options.items() if v != None)
+        return dict((k, v) for k, v in options.items() if v is not None)
 
     # see http://docopt.org
     args = docopt.docopt(__doc__, argv=sys.argv[1:])
-    for key,cast in [(k,c) for k,c in FILTER.items() if k in args]:
+    for key, cast in [(k, c) for k, c in FILTER.items() if k in args]:
         args[key] = cast(args[key])
 
     action = getAction(args)
