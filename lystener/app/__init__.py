@@ -117,16 +117,15 @@ def execute(module, name):
         )
 
         # first get TaskExecutioner lock
-        TaskExecutioner.LOCK.acquire()
         # exit if signature found in database
         if cursor.fetchone()[0] != 0:
             logMsg("data already parsed")
-            TaskExecutioner.LOCK.release()
             return json.dumps(
                 {"success": False, "message": "data already parsed"}
             )
         # else put the job to task execution
         elif signature not in TaskExecutioner.ONGOING:
+            TaskExecutioner.LOCK.acquire()
             event = payload.get("event", "?")
             timestamp = payload.get("timestamp", "?")
             msg = "data authorized - %s\n    %s:%s --> %s.%s" % \
@@ -140,7 +139,6 @@ def execute(module, name):
             return json.dumps({"success": True, "message": msg})
         else:
             logMsg("data on going to be parsed")
-            TaskExecutioner.LOCK.release()
             return json.dumps(
                 {"success": False, "message": "data on going to be parsed"}
             )

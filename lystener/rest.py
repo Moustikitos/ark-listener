@@ -74,24 +74,24 @@ class EndPoint(object):
     @staticmethod
     def _call(method="GET", *args, **kwargs):
         method = method.upper()
-        peer = kwargs.pop(
-            'peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER
-        )
+        headers = kwargs.pop("headers", dict(HEADERS))
+        data = kwargs.pop("urlencode", None)
         # build request
-        url = peer + "/".join(args)
+        url = \
+            kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER) \
+            + "/".join(args)
         if method == "GET":
             if len(kwargs):
-                url += "?" + urlencode(
-                    dict(
-                        [
-                            (k.replace('and_', 'AND:'), v)
-                            for k, v in kwargs.items()
-                        ]
-                    )
-                )
-            req = Request(url, None, HEADERS)
+                url += "?" + urlencode(kwargs)
+            req = Request(url, data, headers)
         else:
-            req = Request(url, json.dumps(kwargs).encode('utf-8'), HEADERS)
+            if data is None:
+                data = json.dumps(kwargs)
+                headers["Content-type"] = "application/json"
+            else:
+                data = urlencode(data)
+                headers["Content-type"] = "application/x-www-form-urlencoded"
+            req = Request(url, data.encode('utf-8'), headers)
         # tweak request
         req.add_header("User-agent", "Mozilla/5.0")
         req.get_method = lambda: method

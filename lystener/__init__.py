@@ -216,13 +216,10 @@ class TaskExecutioner(threading.Thread):
                 sqlite.commit()
                 sqlite.close()
 
-            # remove ongoing task signature
-            if sig in TaskExecutioner.ONGOING:
-                TaskExecutioner.ONGOING.remove(sig)
-
             # remove the module if all jobs done so if code is modified it
             # will be updated without a listener restart
             if TaskExecutioner.JOB.empty():
+                TaskExecutioner.ONGOING.clear()
                 error = False
                 while not error:
                     try:

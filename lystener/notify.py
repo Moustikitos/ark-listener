@@ -1,55 +1,78 @@
 # -*- encoding:utf-8 -*-
 # © THOORENS Bruno
 
-import os
-
+import base64
 import lystener
-from lystener import loadJson, rest, logMsg
+from lystener import loadJson, rest
+
+
+def freemobile_sendmsg(title, body):
+    freemobile = loadJson("freemobile.notify", lystener.DATA)
+    if freemobile != {}:
+        return rest.GET.sendmsg(
+            peer="https://smsapi.free-mobile.fr",
+            msg=title + ":\n" + body,
+            **freemobile
+        )
+
+
+def pushbullet_pushes(title, body):
+    pushbullet = loadJson("pushbullet.notify", lystener.DATA)
+    if pushbullet != {}:
+        return rest.POST.v2.pushes(
+            peer="https://api.pushbullet.com",
+            body=body, title=title, type="note",
+            headers={
+                'Access-Token': pushbullet["token"],
+            }
+        )
+
+
+def pushover_messages(title, body):
+    pushover = loadJson("pushover.notify", lystener.DATA)
+    if pushover != {}:
+        return rest.POST(
+            "1", "messages.json",
+            peer="https://api.pushover.net",
+            urlencode=dict(
+                message=body,
+                title=title,
+                **pushover
+            )
+        )
+
+
+def twilio_messages(title, body):
+    twilio = loadJson("twilio.notify", lystener.DATA)
+    if twilio != {}:
+        authentication = base64.b64encode(
+            ("%s:%s" % (twilio["sid"], twilio["auth"])).encode('utf-8')
+        )
+        return rest.POST(
+            "2010-04-01", "Accounts", twilio["sid"], "Messages.json",
+            peer="https://api.twilio.com",
+            urlencode={
+                "From": twilio["sender"],
+                "To": twilio["receiver"],
+                "Body": body,
+            },
+            headers={
+                "Authorization": "Basic %s" % authentication.decode('ascii')
+            }
+        )
 
 
 def send(title, body):
-    pushover = loadJson("pushover.notify", lystener.DATA)
-    if pushover != {}:
-        pushover["body"] = body
-        pushover["title"] = title
-        os.system('''
-curl -s -F "token=%(token)s" \
-    -F "user=%(user)s" \
-    -F "title=%(title)s" \
-    -F "message=%(body)s" \
-    --silent --output /dev/null \
-    https://api.pushover.net/1/messages.json
-''' % pushover)
+    for func in [
+        freemobile_sendmsg,
+        pushbullet_pushes,
+        pushover_messages,
+        twilio_messages
+    ]:
+        response = func(title, body)
+        if response is not None:
+            return response
 
-    pushbullet = loadJson("pushbullet.notify", lystener.DATA)
-    if pushbullet != {}:
-        pushbullet["body"] = body
-        pushbullet["title"] = title
-        os.system('''
-curl --header 'Access-Token: %(token)s' \
-    --header 'Content-Type: application/json' \
-    --data-binary '{"body":"%(body)s","title":"a%(title)s","type":"note"}' \
-    --request POST \
-    --silent --output /dev/null \
-    https://api.pushbullet.com/v2/pushes
-''' % pushbullet)
-
-    twilio = loadJson("twilio.notify", lystener.DATA)
-    if twilio != {}:
-        twilio["body"] = body
-        os.system('''
-curl -X "POST" "https://api.twilio.com/2010-04-01/Accounts/%(sid)s/Messages.json" \
-    --data-urlencode "From=%(sender)s" \
-    --data-urlencode "Body=%(body)s" \
-    --data-urlencode "To=%(receiver)s" \
-    --silent --output /dev/null \
-    -u "%(sid)s:%(auth)s"
-''' % twilio)
-
-    freemobile = loadJson("freemobile.notify", lystener.DATA)
-    if freemobile != {}:
-        freemobile["msg"] = title + ":\n" + body
-        logMsg("%r" % rest.GET.sendmsg(peer="https://smsapi.free-mobile.fr", **freemobile))
 
 # slack notification
 # https://api.slack.com/methods/chat.postMessage
