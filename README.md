@@ -80,12 +80,12 @@ Usage:
    lys start-listening [-p <port>]
    lys restart-listeners
    lys stop-listening
-   lys public-ip
    lys show-log
+   lys public-ip
 
 Options:
--w --webhook=<webhook>     : the peer registering the webhook
--p --port=<port>           : the port used for listening srv [default: 5001]
+-w --webhook=<webhook> : the peer registering the webhook
+-p --port=<port>       : the port used for listening srv [default: 5001]
 
 Subcommands:
    deploy-listener   : link a webhook <event> with a python <function>
@@ -93,6 +93,6 @@ Subcommands:
    start-listening   : start/restart listener server
    restart-listeners : restart listener server
    stop-listening    : stop listener server
+   show-log          : show server log
    public-ip         : get public ip
-   show-log          : show service log
 ```
