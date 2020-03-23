@@ -1,4 +1,3 @@
 #!/bin/bash
 export PYTHONPATH=${PYTHONPATH}:${HOME}/ark-listener
-export PATH=$(yarn global bin):$PATH
 /bin/bash --rcfile ~/.local/share/ark-listener/venv/bin/activate
