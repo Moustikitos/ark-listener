@@ -14,6 +14,7 @@ echo ==============================
 sudo apt-get -qq install python
 sudo apt-get -qq install python-setuptools
 sudo apt-get -qq install python-pip
+sudo apt-get -qq install pypy
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
 
@@ -41,15 +42,15 @@ echo "done"
 echo
 echo creating virtual environement
 echo =============================
+PYPY=$(which pypy)
 if [ ! -d "$HOME/.local/share/ark-zen/venv" ]; then
     mkdir ~/.local/share/ark-listener/venv -p
-    virtualenv ~/.local/share/ark-listener/venv -q
+    virtualenv -p ${PYPY} ~/.local/share/ark-listener/venv -q
 else
     echo "virtual environement already there !"
 fi
 . ~/.local/share/ark-listener/venv/bin/activate
-export PYTHONPATH=${PYTHONPATH}:${HOME}/ark-listener
-export PATH=$(yarn global bin):$PATH
+export PYTHONPATH=${HOME}/ark-listener
 cd ~/ark-listener
 echo "done"
 

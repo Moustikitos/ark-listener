@@ -83,7 +83,7 @@ class EndPoint(object):
         if method == "GET":
             if len(kwargs):
                 url += "?" + urlencode(kwargs)
-            req = Request(url, data, headers)
+            req = Request(url, None, headers)
         else:
             if data is None:
                 data = json.dumps(kwargs)

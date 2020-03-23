@@ -128,8 +128,8 @@ def execute(module, name):
             TaskExecutioner.LOCK.acquire()
             event = payload.get("event", "?")
             timestamp = payload.get("timestamp", "?")
-            msg = "data authorized - %s\n    %s:%s --> %s.%s" % \
-                  (authorization, timestamp, event, module, name)
+            msg = "data authorized - %s\n    %s:%s --> %s.%s\n    sig:%s" % \
+                  (authorization, timestamp, event, module, name, signature)
             logMsg(msg)
             TaskExecutioner.ONGOING.add(signature)
             TaskExecutioner.JOB.put(
