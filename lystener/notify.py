@@ -11,7 +11,7 @@ def freemobile_sendmsg(title, body):
     if freemobile != {}:
         return rest.GET.sendmsg(
             peer="https://smsapi.free-mobile.fr",
-            msg=title + ":\n" + body,
+            msg=title + b":\n" + body,
             **freemobile
         )
 
@@ -63,6 +63,9 @@ def twilio_messages(title, body):
 
 
 def send(title, body):
+    title = title.encode("utf-8") if not isinstance(title, bytes) else title
+    body = body.encode("utf-8") if not isinstance(body, bytes) else body
+
     for func in [
         freemobile_sendmsg,
         pushbullet_pushes,
