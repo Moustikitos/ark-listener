@@ -43,7 +43,7 @@ echo
 echo creating virtual environement
 echo =============================
 PYPY=$(which pypy)
-if [ ! -d "$HOME/.local/share/ark-zen/venv" ]; then
+if [ ! -d "$HOME/.local/share/ark-listener/venv" ]; then
     mkdir ~/.local/share/ark-listener/venv -p
     virtualenv -p ${PYPY} ~/.local/share/ark-listener/venv -q
 else
