@@ -62,6 +62,20 @@ There are two way for the plugin to be loaded :
   * when event is triggered, once execution finished plugin is cleaned from memory. A plugin can be updated without server restart
   * on server start. The plugin name have to be added to `startup.import` file.
 
+`plugin` dependencies are installed via `pip` using docstring as ini file format:
+
+```python
+# -*- encoding:utf-8 -*-
+"""
+[requirements]
+git+https://github.com/Moustikitos/dpos#egg=dposlib
+configparser
+"""
+
+from dposlib import rest
+[...]
+```
+
 ## How can I check deployed listeners ?
 
 The listening server redirects browser to listener details page.
