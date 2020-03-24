@@ -6,7 +6,6 @@ import os
 import re
 import sys
 import ast
-import time
 import json
 import socket
 import sqlite3
@@ -15,7 +14,6 @@ import traceback
 import threading
 import configparser
 import importlib
-import importlib.util
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
@@ -62,11 +60,8 @@ if os.path.exists(pathfile):
 def check():
     for path in [p for p in __path__[1:] if os.path.exists(p)]:
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
-            logMsg("%s - %s" % (path, os.path.basename(name.split(".")[0])))
-            spec = importlib.util.spec_from_file_location(
-                os.path.basename(name), name
-            )
-            if spec is not None:
+            if os.path.isfile(name):
+                logMsg("%s - %s" % (path, os.path.basename(name.split(".")[0])))
                 with open(name, 'r') as f:
                     tree = ast.parse(f.read())
                     docstring = ast.get_docstring(tree)
