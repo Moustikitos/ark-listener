@@ -48,8 +48,7 @@ echo creating virtual environment
 echo =============================
 
 if [ -d "$HOME/.local/share/ark-listener/venv" ]; then
-    echo -e "remove previous virtual environement ?"
-    read -p "[y/N]> " r
+    read -p "remove previous virtual environement ? [y/N]> " r
     case $r in
     y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
     Y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
