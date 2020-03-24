@@ -47,19 +47,26 @@ echo
 echo creating virtual environment
 echo =============================
 
-echo -e "Select the environment:\n  1) python3\n  2) pypy"
-read -p "(default:python)> " n
-case $n in
-1) TARGET="$(which python3)";;
-2) TARGET="$(which pypy)";;
-*) TARGET="$(which python)";;
-esac
+if [ -d "$HOME/.local/share/ark-listener/venv" ]; then
+    echo -e "remove previous virtual environement ?"
+    read -p "[y/N]> " r
+    case $n in
+    y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
+    Y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
+    *) echo -e "previous virtual environement keeped";;
+    esac
+fi
 
 if [ ! -d "$HOME/.local/share/ark-listener/venv" ]; then
+    echo -e "select environment:\n  1) python3\n  2) pypy"
+    read -p "[default:python]> " n
+    case $n in
+    1) TARGET="$(which python3)";;
+    2) TARGET="$(which pypy)";;
+    *) TARGET="$(which python)";;
+    esac
     mkdir ~/.local/share/ark-listener/venv -p
     virtualenv -p ${TARGET} ~/.local/share/ark-listener/venv -q
-else
-    echo "virtual environement already there !"
 fi
 
 . ~/.local/share/ark-listener/venv/bin/activate
