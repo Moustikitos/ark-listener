@@ -5,14 +5,17 @@ import io
 import os
 import re
 import sys
+import ast
+import time
 import json
 import socket
 import sqlite3
 import datetime
 import traceback
 import threading
-
-from importlib import import_module
+import configparser
+import importlib
+import importlib.util
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
@@ -40,6 +43,7 @@ VALID_URL = re.compile(
 
 # add the modules folder to the package path
 __path__.append(os.path.abspath(os.path.join(ROOT, "plugins")))
+__path__.append(os.path.abspath(os.path.join(ROOT, "_plugins")))
 
 # add custom modules pathes from modules.pth file
 # targeted python code could be anywhere where user can access
@@ -53,6 +57,38 @@ if os.path.exists(pathfile):
         ]:
             if path != "":
                 __path__.append(os.path.abspath(path))
+
+
+def check():
+    for path in [p for p in __path__[1:] if os.path.exists(p)]:
+        for name in [os.path.join(path, name) for name in os.listdir(path)]:
+            logMsg("%s - %s" % (path, os.path.basename(name.split(".")[0])))
+            spec = importlib.util.spec_from_file_location(
+                os.path.basename(name), name
+            )
+            if spec is not None:
+                with open(name, 'r') as f:
+                    tree = ast.parse(f.read())
+                    docstring = ast.get_docstring(tree)
+                    if docstring is not None:
+                        cfg = configparser.ConfigParser(
+                            allow_no_value=True,
+                            delimiters="~"
+                        )
+                        try:
+                            cfg.read_string(docstring)
+                        except Exception as error:
+                            logMsg(
+                                "    docstring not exploited\n%r\n%s" %
+                                (error, traceback.format_exc())
+                            )
+                        else:
+                            if "requirements" in cfg.sections():
+                                os.system(
+                                    "pip install %s" %
+                                    " ".join(cfg["requirements"].keys())
+                                )
+                            logMsg("    docstring exploited")
 
 
 def getPublicIp():
@@ -175,21 +211,20 @@ class TaskExecutioner(threading.Thread):
         self.start()
 
     def run(self):
-        # controled infinite loop
         while not TaskExecutioner.STOP.is_set():
             error = False
             # wait until a job is given
             module, name, data, sig, auth = TaskExecutioner.JOB.get()
             # import asked module
             try:
-                obj = import_module("lystener."+module)
-                TaskExecutioner.MODULES.add(obj)
+                obj = importlib.import_module("lystener."+module)
             except Exception as exception:
                 error = True
                 msg = "%r\ncan not import python module %s" % \
                       (exception, module)
             # get asked function and execute it with data
             else:
+                TaskExecutioner.MODULES.add(obj)
                 func = getattr(obj, name, False)
                 if func:
                     try:
@@ -208,6 +243,7 @@ class TaskExecutioner(threading.Thread):
             # daemon waits here to log results, update database and clean
             # memory
             TaskExecutioner.LOCK.acquire()
+
             logMsg(msg)
             if not error and response.get("success", False):
                 sqlite = initDB()

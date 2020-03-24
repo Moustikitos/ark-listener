@@ -87,9 +87,6 @@ def execute(module, name):
             return json.dumps(
                 {"success": False, "message": "no data provided"}
             )
-        # sort data
-        else:
-            data = sameDataSort(data)
 
         # check authorization and exit if bad one
         authorization = flask.request.headers.get("Authorization", "?")
@@ -105,6 +102,7 @@ def execute(module, name):
         # try to get a signature from data
         signature = data.get("signature", False)
         if not signature:
+            data = sameDataSort(data)
             # generate sha 256 hash as signature if no one found
             # remove all trailing spaces, new lines, tabs etc...
             raw = re.sub(r"[\s]*", "", json.dumps(data))
@@ -154,7 +152,11 @@ def close(*args, **kw):
 def sameDataSort(data, reverse=False):
     """return a sorted object from iterable data"""
     if isinstance(data, (list, tuple)):
-        return sorted(data, reverse=reverse)
+        return sorted(
+            data,
+            key=lambda e: list(e.values()) if isinstance(e, dict) else e,
+            reverse=reverse,
+        )
     elif isinstance(data, dict):
         result = OrderedDict()
         for key, value in sorted(
