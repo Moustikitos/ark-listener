@@ -3,3 +3,4 @@ docopt
 future
 flask
 gunicorn
+configparser

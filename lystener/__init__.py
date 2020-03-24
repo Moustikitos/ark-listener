@@ -62,7 +62,7 @@ def check():
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
             if os.path.isfile(name):
                 logMsg("%s - %s" % (path, os.path.basename(name.split(".")[0])))
-                with open(name, 'r') as f:
+                with open(name, "r" if PY3 else "rb") as f:
                     tree = ast.parse(f.read())
                     docstring = ast.get_docstring(tree)
                     if docstring is not None:
@@ -71,7 +71,10 @@ def check():
                             delimiters="~"
                         )
                         try:
-                            cfg.read_string(docstring)
+                            cfg.read_string(
+                                docstring.decode("utf-8") if not PY3
+                                else docstring
+                            )
                         except Exception as error:
                             logMsg(
                                 "    docstring not exploited\n%r\n%s" %
