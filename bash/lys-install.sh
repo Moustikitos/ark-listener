@@ -50,7 +50,7 @@ echo =============================
 if [ -d "$HOME/.local/share/ark-listener/venv" ]; then
     echo -e "remove previous virtual environement ?"
     read -p "[y/N]> " r
-    case $n in
+    case $r in
     y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
     Y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
     *) echo -e "previous virtual environement keeped";;
