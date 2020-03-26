@@ -12,8 +12,8 @@ import sqlite3
 import datetime
 import traceback
 import threading
-import configparser
 import importlib
+import configparser
 
 # save python familly
 PY3 = True if sys.version_info[0] >= 3 else False
@@ -57,11 +57,13 @@ if os.path.exists(pathfile):
                 __path__.append(os.path.abspath(path))
 
 
-def check():
+def checkPluginDependencies():
     for path in [p for p in __path__[1:] if os.path.exists(p)]:
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
             if os.path.isfile(name):
-                logMsg("%s - %s" % (path, os.path.basename(name.split(".")[0])))
+                logMsg(
+                    "%s - %s" % (path, os.path.basename(name.split(".")[0]))
+                )
                 with open(name, "r" if PY3 else "rb") as f:
                     tree = ast.parse(f.read())
                     docstring = ast.get_docstring(tree)
@@ -77,7 +79,7 @@ def check():
                             )
                         except Exception as error:
                             logMsg(
-                                "    docstring not exploited\n%r\n%s" %
+                                "docstring not exploited\n%r\n%s" %
                                 (error, traceback.format_exc())
                             )
                         else:
@@ -86,7 +88,7 @@ def check():
                                     "pip install %s" %
                                     " ".join(cfg["requirements"].keys())
                                 )
-                            logMsg("    docstring exploited")
+                            logMsg("docstring exploited")
 
 
 def getPublicIp():

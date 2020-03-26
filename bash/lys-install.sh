@@ -12,12 +12,8 @@ echo "branch selected = $B"
 echo
 echo installing system dependencies
 echo ==============================
-sudo apt-get -qq install python python-dev
-sudo apt-get -qq install python-setuptools
-sudo apt-get -qq install python-pip
-sudo apt-get -qq install python3 python3-dev
-sudo apt-get -qq install python3-setuptools
-sudo apt-get -qq install python3-pip
+sudo apt-get -qq install python python-dev python-setuptools python-pip
+sudo apt-get -qq install python3 python3-dev python3-setuptools python3-pip
 sudo apt-get -qq install pypy
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
@@ -67,6 +63,8 @@ if [ ! -d "$HOME/.local/share/ark-listener/venv" ]; then
     mkdir ~/.local/share/ark-listener/venv -p
     virtualenv -p ${TARGET} ~/.local/share/ark-listener/venv -q
 fi
+
+# if [ $(which pypy3) ]; then echo "OK"; fi
 
 . ~/.local/share/ark-listener/venv/bin/activate
 export PYTHONPATH=${HOME}/ark-listener

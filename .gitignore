@@ -106,3 +106,4 @@ venv.bak/
 .mypy_cache/
 lystener/peer.json
 lystener/_plugins
+app.7z

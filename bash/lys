@@ -35,7 +35,7 @@ sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import lystener
-from lystener import rest, check
+from lystener import rest, checkPluginDependencies
 
 
 # ubuntu systemd service template
@@ -47,7 +47,7 @@ After=network.target
 User=${USER}
 WorkingDirectory=${HOME}/.local/share/ark-listener
 Environment=PYTHONPATH=${HOME}/ark-listener
-ExecStart=${HOME}/.local/share/ark-listener/venv/bin/gunicorn lystener.app:app --bind=0.0.0.0:%(port)s --workers=5 --access-logfile -
+ExecStart=${HOME}/.local/share/ark-listener/venv/bin/gunicorn 'lystener.server:WebhookApp()' --bind=0.0.0.0:%(port)s --workers=5 --access-logfile -
 Restart=always
 
 [Install]
@@ -64,7 +64,7 @@ def start_listening(args={}, **options):
     os.system('echo "%s" > ~/lys.service' % (SERVICE % options))
     os.system("sudo mv ~/lys.service /etc/systemd/system")
     os.system("sudo systemctl daemon-reload")
-    check()
+    checkPluginDependencies()
     if not os.system("sudo systemctl restart lys"):
         os.system("sudo systemctl start lys")
 
@@ -74,7 +74,7 @@ def stop_listening(args={}, **options):
 
 
 def restart_listeners(args={}, **options):
-    check()
+    checkPluginDependencies()
     os.system("sudo systemctl restart lys")
 
 
