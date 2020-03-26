@@ -31,7 +31,7 @@ class WebhookApp:
         path = environ.get("PATH_INFO", "/")
         match = PATTERN.match(environ.get("PATH_INFO", ""))
         method = environ["REQUEST_METHOD"]
-        # if somethin matched
+
         if match is not None and method == "POST":
             module, name = match.groups()
             authorization = environ.get("HTTP_AUTHORIZATION", "?")
@@ -89,7 +89,7 @@ class WebhookApp:
 
         data = json.dumps(resp)
         data = data.encode("utf-8") if not isinstance(data, bytes) else data
-        write = start_response(value, {"Content-type": "application/json"}.items())
+        write = start_response(value, (["Content-type", "application/json"],))
         write(data)
 
         return b""
