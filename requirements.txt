@@ -1,6 +1,5 @@
 wheel
 docopt
 future
-flask
 gunicorn
 configparser
