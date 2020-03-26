@@ -2,3 +2,4 @@ wheel
 docopt
 future
 gunicorn
+configparser
