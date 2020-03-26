@@ -13,7 +13,7 @@
 
 Ark core webhooks trigger POST requests containing data to a targeted peer. This one then have to parse data and trigger code execution.
 
-`ark-listener` uses a Flask application listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
+`ark-listener` uses python or bunicorn server application listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
 
 If found, `module.function` will be executed with data embeded in the POST request.
 
