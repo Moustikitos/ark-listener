@@ -3,7 +3,6 @@
 
 import re
 import os
-import cgi
 import json
 import hashlib
 import lystener
@@ -18,143 +17,102 @@ else:
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 PATTERN = re.compile(r"^/([0-9a-zA-Z_]*)/([0-9a-zA-Z_]*)$")
-CURSOR = lystener.initDB().cursor()
+CURSOR = None
 
 
 class WebhookApp:
 
     def __init__(self, host="0.0.0.0", port=5000):
+        global CURSOR
+        if CURSOR is None:
+            CURSOR = lystener.initDB().cursor()
         self.host = host
         self.port = port
 
     def __call__(self, environ, start_response):
+        """
+        Web Server Gateway Interface for deployement.
+        """
         path = environ.get("PATH_INFO", "/")
-        match = PATTERN.match(environ.get("PATH_INFO", ""))
         method = environ["REQUEST_METHOD"]
+        match = PATTERN.match(path)
 
         if match is not None and method == "POST":
-            module, name = match.groups()
             authorization = environ.get("HTTP_AUTHORIZATION", "?")
-
-            try:
-                payload = json.loads(environ["wsgi.input"].read())
-            except Exception as error:
-                payload = {}
-                resp = {
-                    "success": False,
-                    "msg": "error processing data",
-                    "traceback": "%r:\n%s" %
-                    (error, traceback.format_exc())
-                }
-                value = b"406"
-            else:
-                resp = {"success": True}
-                value = b"200"
-
+            module, name = match.groups()
+            value, resp, payload = extractPayload(
+                environ["wsgi.input"].read()
+            )
             if payload != {}:
                 resp = managePayload(payload, authorization, module, name)
 
         elif path == "/" and method == "GET":
-            if os.path.exists(os.path.join(lystener.ROOT, ".json")):
-                json_list = [
-                    lystener.loadJson(name) for name in os.listdir(
-                        os.path.join(lystener.ROOT, ".json")
-                    ) if name.endswith(".json")
-                ]
-            else:
-                json_list = []
-
-            counts = dict(
-                CURSOR.execute(
-                    "SELECT authorization, count(*) FROM history GROUP BY authorization"
-                ).fetchall()
-            )
-
-            data = []
-            for webhook in json_list:
-                info = {}
-                info["counts"] = counts.get(webhook["token"][:32], 0)
-                info["id"] = webhook["id"]
-                info["event"] = webhook["event"]
-                info["conditions"] = webhook["conditions"]
-                info["peer"] = webhook["peer"]
-                data.append(info)
-
-            resp = {"success": True, "data": data}
-            value = b"200"
+            resp = {"success": True, "data": listenerState()}
+            value = 200
 
         else:
             resp = {"success": False, "msg": "invalid endpoint"}
-            value = b"403"
+            value = 403
 
         data = json.dumps(resp)
         data = data.encode("utf-8") if not isinstance(data, bytes) else data
-        write = start_response(value, (["Content-type", "application/json"],))
+        write = start_response(
+            b"%d" % value, (["Content-type", "application/json"],)
+        )
         write(data)
-
         return b""
 
     def run(self):
+        """
+        For testing purpose only.
+        """
         self.httpd = HTTPServer((self.host, self.port), WebhookHandler)
-        self.thread = threading.Thread(target=self.httpd.serve_forever)
-        self.thread.setDaemon(True)
-        self.thread.start()
-
-    def stop(self):
-        self.httpd.shutdown()
-        self.httpd.server_close()
+        try:
+            self.httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
 
 
 class WebhookHandler(BaseHTTPRequestHandler):
 
-    def do_POST(self):
-        match = PATTERN.match(self.path)
+    def do_GET(self):
+        if self.path == "/":
+            resp = {"success": True, "data": listenerState()}
+            value = 200
+        else:
+            resp = {"success": False, "msg": "invalid endpoint"}
+            value = 403
+        data = json.dumps(resp)
+        self.send_response(value)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(
+            data if isinstance(data, bytes) else data.encode("utf-8")
+        )
 
-        # if somethin matched
+    def do_POST(self):
+        authorization = getHeader(self.headers, "Authorization", "?")
+        match = PATTERN.match(self.path)
         if match is not None:
             module, name = match.groups()
-            ctype, pdict = cgi.parse_header(
-                getHeader(self.headers, 'content-type')
+            value, resp, payload = extractPayload(
+                self.rfile.read(
+                    int(getHeader(self.headers, 'content-length'))
+                )
             )
-            if ctype == 'application/json':
-                try:
-                    length = int(getHeader(self.headers, 'content-length'))
-                    payload = json.loads(self.rfile.read(length))
-                except Exception as error:
-                    payload = {}
-                    resp = {
-                        "success": False,
-                        "msg": "error processing data",
-                        "traceback": "%r:\n%s" %
-                        (error, traceback.format_exc())
-                    }
-                    value = 406
-                else:
-                    resp = {"success": True}
-                    value = 200
-            else:
-                payload = {}
-                resp = {"success": False, "msg": "no valid jsons found"}
-                value = 415
-
+            if payload != {}:
+                resp = managePayload(payload, authorization, module, name)
         else:
             payload = {}
             resp = {"success": False, "msg": "invalid endpoint"}
             value = 403
 
+        data = json.dumps(resp)
+        data = data if isinstance(data, bytes) else data.encode("utf-8")
         self.send_response(value)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
-
-        if payload != {}:
-            resp = managePayload(
-                payload, getHeader(self.headers, "Authorization", "?"),
-                module, name
-            )
-
-        data = json.dumps(resp)
-        self.wfile.write(data.encode("utf-8") if lystener.PY3 else data)
-        return
+        self.wfile.write(data)
 
 
 def getHeader(httpmsg, key, alt=False):
@@ -162,6 +120,25 @@ def getHeader(httpmsg, key, alt=False):
         return httpmsg.get(key, alt)
     else:
         return httpmsg.getheader(key, alt)
+
+
+def extractPayload(data):
+    try:
+        payload = json.loads(data)
+    except Exception as error:
+        payload = {}
+        resp = {
+            "success": False,
+            "msg": "error processing data",
+            "traceback": "%r:\n%s" %
+            (error, traceback.format_exc())
+        }
+        value = 406
+    else:
+        resp = {"success": True}
+        value = 200
+
+    return value, resp, payload
 
 
 def managePayload(payload, authorization, module, name):
@@ -237,3 +214,33 @@ def sameDataSort(data, reverse=False):
         return result
     else:
         return data
+
+
+def listenerState():
+    if os.path.exists(os.path.join(lystener.ROOT, ".json")):
+        json_list = [
+            lystener.loadJson(name) for name in os.listdir(
+                os.path.join(lystener.ROOT, ".json")
+            ) if name.endswith(".json")
+        ]
+    else:
+        json_list = []
+
+    counts = dict(
+        CURSOR.execute(
+            "SELECT authorization, count(*) "
+            "FROM history GROUP BY authorization"
+        ).fetchall()
+    )
+
+    data = []
+    for webhook in json_list:
+        info = {}
+        info["counts"] = counts.get(webhook["token"][:32], 0)
+        info["id"] = webhook["id"]
+        info["event"] = webhook["event"]
+        info["conditions"] = webhook["conditions"]
+        info["peer"] = webhook["peer"]
+        data.append(info)
+
+    return data
