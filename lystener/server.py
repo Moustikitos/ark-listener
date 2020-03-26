@@ -2,6 +2,7 @@
 # © Toons
 
 import re
+import os
 import cgi
 import json
 import hashlib
@@ -27,7 +28,7 @@ class WebhookApp:
         self.port = port
 
     def __call__(self, environ, start_response):
-        lystener.logMsg(environ)
+        path = environ.get("PATH_INFO", "/")
         match = PATTERN.match(environ.get("PATH_INFO", ""))
         method = environ["REQUEST_METHOD"]
         # if somethin matched
@@ -50,13 +51,41 @@ class WebhookApp:
                 resp = {"success": True}
                 value = b"200"
 
+            if payload != {}:
+                resp = managePayload(payload, authorization, module, name)
+
+        elif path == "/" and method == "GET":
+            if os.path.exists(os.path.join(lystener.ROOT, ".json")):
+                json_list = [
+                    lystener.loadJson(name) for name in os.listdir(
+                        os.path.join(lystener.ROOT, ".json")
+                    ) if name.endswith(".json")
+                ]
+            else:
+                json_list = []
+
+            counts = dict(
+                CURSOR.execute(
+                    "SELECT authorization, count(*) FROM history GROUP BY authorization"
+                ).fetchall()
+            )
+
+            data = []
+            for webhook in json_list:
+                info = {}
+                info["counts"] = counts.get(webhook["token"][:32], 0)
+                info["id"] = webhook["id"]
+                info["event"] = webhook["event"]
+                info["conditions"] = webhook["conditions"]
+                info["peer"] = webhook["peer"]
+                data.append(info)
+
+            resp = {"success": True, "data": data}
+            value = b"200"
+
         else:
-            payload = {}
             resp = {"success": False, "msg": "invalid endpoint"}
             value = b"403"
-
-        if payload != {}:
-            resp = managePayload(payload, authorization, module, name)
 
         data = json.dumps(resp)
         data = data.encode("utf-8") if not isinstance(data, bytes) else data
@@ -136,7 +165,7 @@ def getHeader(httpmsg, key, alt=False):
 
 
 def managePayload(payload, authorization, module, name):
-1 47    # get the content of `data` field
+    # get the content of `data` field
     data = payload.get("data", False)
     # check the data sent by webhook
     if not data:
@@ -208,4 +237,3 @@ def sameDataSort(data, reverse=False):
         return result
     else:
         return data
-
