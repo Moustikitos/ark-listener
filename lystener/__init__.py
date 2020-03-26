@@ -112,9 +112,10 @@ def loadJson(name, folder=None):
     )
     if os.path.exists(filename):
         with io.open(filename) as in_:
-            return json.load(in_)
+            data = json.load(in_)
     else:
-        return {}
+        data = {}
+    return data
 
 
 def dumpJson(data, name, folder=None):
