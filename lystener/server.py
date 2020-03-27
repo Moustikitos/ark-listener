@@ -6,7 +6,6 @@ import os
 import json
 import hashlib
 import lystener
-import threading
 import traceback
 
 from collections import OrderedDict
@@ -31,7 +30,7 @@ class WebhookApp:
 
     def __call__(self, environ, start_response):
         """
-        Web Server Gateway Interface for deployement.
+        Web Server Gateway Interface for deployment.
         """
         path = environ.get("PATH_INFO", "/")
         method = environ["REQUEST_METHOD"]

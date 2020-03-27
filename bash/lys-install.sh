@@ -1,5 +1,6 @@
+VENVDIR="$HOME/.local/share/ark-listener/venv"
+GITREPO="https://github.com/Moustikitos/ark-listener.git"
 
-# install system dependencies
 clear
 
 if [ $# = 0 ]; then
@@ -23,7 +24,7 @@ echo
 echo downloading ark-listener package
 echo ================================
 cd ~
-if (git clone --branch $B https://github.com/Moustikitos/ark-listener.git) then
+if (git clone --branch $B $GITREPO) then
 cd ~/ark-listener
 else
     echo "ark-zen already cloned !"
@@ -43,16 +44,16 @@ echo
 echo creating virtual environment
 echo =============================
 
-if [ -d "$HOME/.local/share/ark-listener/venv" ]; then
+if [ -d $VENVDIR ]; then
     read -p "remove previous virtual environement ? [y/N]> " r
     case $r in
-    y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
-    Y) rm -rf ${HOME}/.local/share/ark-listener/venv;;
+    y) rm -rf $VENVDIR;;
+    Y) rm -rf $VENVDIR;;
     *) echo -e "previous virtual environement keeped";;
     esac
 fi
 
-if [ ! -d "$HOME/.local/share/ark-listener/venv" ]; then
+if [ ! -d $VENVDIR ]; then
     echo -e "select environment:\n  1) python3\n  2) pypy"
     read -p "[default:python]> " n
     case $n in
@@ -60,14 +61,14 @@ if [ ! -d "$HOME/.local/share/ark-listener/venv" ]; then
     2) TARGET="$(which pypy)";;
     *) TARGET="$(which python)";;
     esac
-    mkdir ~/.local/share/ark-listener/venv -p
-    virtualenv -p ${TARGET} ~/.local/share/ark-listener/venv -q
+    mkdir $VENVDIR -p
+    virtualenv -p $TARGET $VENVDIR -q
 fi
 
 # if [ $(which pypy3) ]; then echo "OK"; fi
 
-. ~/.local/share/ark-listener/venv/bin/activate
-export PYTHONPATH=${HOME}/ark-listener
+. $VENVDIR/bin/activate
+export PYTHONPATH=$HOME/ark-listener
 cd ~/ark-listener
 echo "done"
 
