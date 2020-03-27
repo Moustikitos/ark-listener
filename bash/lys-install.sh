@@ -70,16 +70,15 @@ if [ ! -d $VENVDIR ]; then
     virtualenv -p $TARGET $VENVDIR -q
 fi
 
-# if [ $(which pypy3) ]; then echo "OK"; fi
-
-. $VENVDIR/bin/activate
-export PYTHONPATH=$HOME/ark-listener
 echo "done"
+# if [ $(which pypy3) ]; then echo "OK"; fi
 
 # install python dependencies
 echo
 echo installing python dependencies
 echo ==============================
+. $VENVDIR/bin/activate
+export PYTHONPATH=$HOME/ark-listener
 cd ~/ark-listener
 pip install -r requirements.txt -q
 echo "done"
