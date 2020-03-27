@@ -1,3 +1,5 @@
+#!/bin/bash
+
 VENVDIR="$HOME/.local/share/ark-listener/venv"
 GITREPO="https://github.com/Moustikitos/ark-listener.git"
 
@@ -18,17 +20,19 @@ sudo apt-get -qq install python3 python3-dev python3-setuptools python3-pip
 sudo apt-get -qq install pypy
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
+echo "done"
 
-# download ark-listener package
 echo
 echo downloading ark-listener package
 echo ================================
+
 cd ~
 if (git clone --branch $B $GITREPO) then
-cd ~/ark-listener
+    echo "package cloned !"
 else
-    echo "ark-zen already cloned !"
+    echo "package already cloned !"
 fi
+
 cd ~/ark-listener
 git reset --hard
 git fetch --all
@@ -38,6 +42,7 @@ else
     git checkout tags/$B -f
 fi
 git pull
+
 echo "done"
 
 echo
@@ -69,17 +74,18 @@ fi
 
 . $VENVDIR/bin/activate
 export PYTHONPATH=$HOME/ark-listener
-cd ~/ark-listener
 echo "done"
 
 # install python dependencies
 echo
 echo installing python dependencies
 echo ==============================
+cd ~/ark-listener
 pip install -r requirements.txt -q
 echo "done"
 
 chmod +x bash/activate
+
 cp bash/lys ~
 cd ~
 chmod +x lys
