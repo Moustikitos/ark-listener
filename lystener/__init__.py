@@ -29,7 +29,9 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 JSON = os.path.abspath(os.path.join(ROOT, ".json"))
 DATA = os.path.abspath(os.path.join(ROOT, ".data"))
 LOG = os.path.abspath(os.path.join(ROOT, ".log"))
-
+#
+LOADED_JSON = {}
+#
 VALID_URL = re.compile(
     r'^https?://'  # http:// or https://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
@@ -106,15 +108,25 @@ def getPublicIp():
     return PUBLIC_IP
 
 
-def loadJson(name, folder=None):
-    filename = os.path.join(
-        JSON, name if not folder else os.path.join(folder, name)
-    )
-    if os.path.exists(filename):
+def loadJson(name, folder=None, reload=False):
+    filename = os.path.join(JSON if not folder else folder, name)
+    data = LOADED_JSON.get(filename, False)
+    if data and not reload:
+        return data
+    elif os.path.exists(filename):
         with io.open(filename) as in_:
             data = json.load(in_)
     else:
         data = {}
+    # hack to avoid "OSError: [Errno 24] Too many open files"
+    # with pypy
+    try:
+        in_.close()
+        del in_
+    except Exception:
+        pass
+    #
+    LOADED_JSON[filename] = data
     return data
 
 
@@ -127,7 +139,16 @@ def dumpJson(data, name, folder=None):
     except OSError:
         pass
     with io.open(filename, "w" if PY3 else "wb") as out:
+        LOADED_JSON[filename] = data
         json.dump(data, out, indent=4)
+    # hack to avoid "OSError: [Errno 24] Too many open files"
+    # with pypy
+    try:
+        out.close()
+        del out
+    except Exception:
+        pass
+    #
 
 
 def logMsg(msg, logname=None, dated=False):
