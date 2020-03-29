@@ -94,13 +94,12 @@ class EndPoint(object):
 
         # construct base url
         chain = "/".join(args)
-        if chain[0] != "/":
+        if chain == "" or not chain.startswith("/"):
             chain = "/" + chain
         else:
             chain = chain.replace("//", "/")
         url = \
-            kwargs.pop('peer', "%(scheme)s://%(ip)s:%(port)s" % WEBHOOK_PEER) \
-            + chain
+            kwargs.pop('peer', EndPoint.peer) + chain
 
         if method == "GET":
             if len(kwargs):
