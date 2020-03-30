@@ -1,5 +1,6 @@
 wheel
 docopt
 future
-gunicorn
+gunicorn==19.10.0; python_version < '3.0'
+gunicorn; python_version >= '3.0'
 configparser

@@ -55,8 +55,8 @@ class WebhookApp:
             value = 403
 
         data = json.dumps(resp)
-        data = data.encode("latin-1") if not isinstance(data, bytes) else data
         statuscode = "%d" % value
+        data = data.encode("latin-1") if not isinstance(data, bytes) else data
         write = start_response(
            statuscode.decode("latin-1") if isinstance(statuscode, bytes)
            else statuscode,
