@@ -94,12 +94,11 @@ class EndPoint(object):
 
         # construct base url
         chain = "/".join(args)
-        if chain == "" or not chain.startswith("/"):
+        if not chain.startswith("/"):
             chain = "/" + chain
         else:
             chain = chain.replace("//", "/")
-        url = \
-            kwargs.pop('peer', EndPoint.peer) + chain
+        url = kwargs.pop('peer', EndPoint.peer) + chain
 
         if method == "GET":
             if len(kwargs):

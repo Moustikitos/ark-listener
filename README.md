@@ -20,7 +20,7 @@ If found, `module.function` will be executed with data embeded in the POST reque
 ## Install development version
 
 ```bash
- bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
+bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
 ```
 
 ### Deploy listener

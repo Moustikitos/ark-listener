@@ -21,7 +21,7 @@ CURSOR = None
 
 class WebhookApp:
 
-    def __init__(self, host="0.0.0.0", port=5000):
+    def __init__(self, host="127.0.0.1", port=5000):
         global CURSOR
         if CURSOR is None:
             CURSOR = lystener.initDB().cursor()
@@ -31,9 +31,10 @@ class WebhookApp:
     def __call__(self, environ, start_response):
         """
         Web Server Gateway Interface for deployment.
+        https://www.python.org/dev/peps/pep-3333/
         """
-        path = environ.get("PATH_INFO", "/")
         method = environ["REQUEST_METHOD"]
+        path = environ.get("PATH_INFO", "/")
         match = PATTERN.match(path)
 
         if match is not None and method == "POST":
@@ -54,9 +55,12 @@ class WebhookApp:
             value = 403
 
         data = json.dumps(resp)
-        data = data.encode("utf-8") if not isinstance(data, bytes) else data
+        data = data.encode("latin-1") if not isinstance(data, bytes) else data
+        statuscode = "%d" % value
         write = start_response(
-            b"%d" % value, (["Content-type", "application/json"],)
+           statuscode.decode("latin-1") if isinstance(statuscode, bytes)
+           else statuscode,
+           (["Content-type", "application/json"],)
         )
         write(data)
         return b""
