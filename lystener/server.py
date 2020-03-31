@@ -54,24 +54,24 @@ class Seed:
             else Seed.utc_data.encode("utf-8")
         ).hexdigest()
         r = binascii.hexlify(Seed.random)
-        salt = lystener.loadJson("salt.json")
+        salt = lystener.loadJson("salt")
         salt["salt"] = \
             (h.decode("utf-8") if isinstance(h, bytes) else h) + \
             (r.decode("utf-8") if isinstance(r, bytes) else r)
-        lystener.dumpJson(salt, "salt.json")
+        lystener.dumpJson(salt, "salt")
 
     @staticmethod
     def start():
-        lystener.dumpJson({"locked": True}, "salt.json")
+        lystener.dumpJson({"locked": True}, "salt")
         lystener.setInterval(61)(Seed.update)()
         Seed.dump()
 
     @staticmethod
     def get(pin=False):
         try:
-            value = lystener.loadJson("salt.json")["salt"]
+            value = lystener.loadJson("salt")["salt"]
         except KeyError:
-            if not os.path.exists(os.path.join(lystener.JSON, "salt.json")):
+            if not os.path.exists(os.path.join(lystener.JSON, "salt")):
                 Seed.start()
             return Seed.get(pin)
         return int(value[:5], 16) if pin else value
@@ -89,7 +89,7 @@ class WebhookApp:
             CURSOR = lystener.initDB().cursor()
         self.host = host
         self.port = port
-        if not lystener.loadJson("salt.json").get("locked", False):
+        if not lystener.loadJson("salt").get("locked", False):
             Seed.start()
 
     def __call__(self, environ, start_response):
@@ -110,6 +110,9 @@ class WebhookApp:
                 )
                 if payload != {}:
                     resp = callListener(payload, authorization, module, name)
+            else:
+                resp = {"success": False, "msg": "invalid listener endpoint"}
+                value = 403
 
         elif method == "GET":
             if path == "/":
@@ -199,7 +202,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 resp = callListener(payload, authorization, module, name)
         else:
             payload = {}
-            resp = {"success": False, "msg": "invalid endpoint"}
+            resp = {"success": False, "msg": "invalid listener endpoint"}
             value = 403
 
         return self.close_request(value, resp)
