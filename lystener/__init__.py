@@ -30,8 +30,6 @@ JSON = os.path.abspath(os.path.join(ROOT, ".json"))
 DATA = os.path.abspath(os.path.join(ROOT, ".data"))
 LOG = os.path.abspath(os.path.join(ROOT, ".log"))
 #
-LOADED_JSON = {}
-#
 VALID_URL = re.compile(
     r'^https?://'  # http:// or https://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
@@ -108,12 +106,9 @@ def getPublicIp():
     return PUBLIC_IP
 
 
-def loadJson(name, folder=None, reload=False):
+def loadJson(name, folder=None):
     filename = os.path.join(JSON if not folder else folder, name)
-    data = LOADED_JSON.get(filename, False)
-    if data and not reload:
-        return data
-    elif os.path.exists(filename):
+    if os.path.exists(filename):
         with io.open(filename) as in_:
             data = json.load(in_)
     else:
@@ -126,7 +121,6 @@ def loadJson(name, folder=None, reload=False):
     except Exception:
         pass
     #
-    LOADED_JSON[filename] = data
     return data
 
 
@@ -139,7 +133,6 @@ def dumpJson(data, name, folder=None):
     except OSError:
         pass
     with io.open(filename, "w" if PY3 else "wb") as out:
-        LOADED_JSON[filename] = data
         json.dump(data, out, indent=4)
     # hack to avoid "OSError: [Errno 24] Too many open files"
     # with pypy
@@ -219,6 +212,41 @@ def initDB():
     sqlite.row_factory = sqlite3.Row
     sqlite.commit()
     return sqlite
+
+
+def setInterval(interval):
+    """ threaded decorator
+    >>> @setInterval(10)
+    ... def tick():
+    ...     print("Tick")
+    >>> event = tick() # print 'Tick' every 10 sec
+    >>> type(event)
+    <class 'threading.Event'>
+    >>> event.set() # stop printing 'Tick' every 10 sec
+    """
+    def decorator(function):
+        """Main decorator function."""
+
+        def wrapper(*args, **kwargs):
+            """Helper function to create thread."""
+
+            stopped = threading.Event()
+
+            # executed in another thread
+            def loop():
+                """Thread entry point."""
+
+                # until stopped
+                while not stopped.wait(interval):
+                    function(*args, **kwargs)
+
+            t = threading.Thread(target=loop)
+            # stop if the program exits
+            t.daemon = True
+            t.start()
+            return stopped
+        return wrapper
+    return decorator
 
 
 class TaskExecutioner(threading.Thread):
