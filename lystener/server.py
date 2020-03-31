@@ -122,7 +122,7 @@ class WebhookApp:
                 resp = {"success": True, "salt": Seed.get()}
                 value = 200
             elif path == "/pin":
-                resp = {"success": True, "salt": Seed.get(pin=True)}
+                resp = {"success": True, "pin": Seed.get(pin=True)}
                 value = 200
             else:
                 resp = {"success": False, "msg": "invalid endpoint"}
@@ -181,7 +181,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             resp = {"success": True, "salt": Seed.get()}
             value = 200
         elif self.path == "/pin":
-            resp = {"success": True, "salt": Seed.get(pin=True)}
+            resp = {"success": True, "pin": Seed.get(pin=True)}
             value = 200
         else:
             resp = {"success": False, "msg": "invalid endpoint"}
@@ -235,10 +235,10 @@ def managePutDelete(method, path, payload, headers):
         return 403, {"success": False, "msg": "invalid endpoint"}
 
     # check if publick key defined in header is an authorized one
-    # auth.json is a list of public keys. Because loadJson returns a void
+    # auth is a list of public keys. Because loadJson returns a void
     # dict if no file found, the if condition acts same as if it was a list
     publicKey = headers.get("Public-key", "?")
-    if publicKey not in lystener.loadJson("auth.json"):
+    if publicKey not in lystener.loadJson("auth"):
         return 400, {"success": False, "msg": "not authorized"}
 
     # load payload as json, if value != 200 --> payload is not compliant with
@@ -249,37 +249,45 @@ def managePutDelete(method, path, payload, headers):
 
     # get signature as ecdsa or schnorr and generate msg used to issue
     # signature
-    schnorr_sig = headers.get("Schnorr-sig", "?").encode("utf-8")
-    ecdsa_sig = headers.get("Ecdsa-sig", "?").encode("utf-8")
+    schnorr_sig = headers.get("Schnorr-sig", "?")
+    ecdsa_sig = headers.get("Ecdsa-sig", "?")
     msg = (
         jsonHash(payload) + headers.get("Salt", "") + Seed.get()
     ).encode("utf-8")
     # Note that client have to define its own salt value and get a 1-min-valid
     # random seed from lystener.
     # See /salt endpoint
-    msg = hashlib.sha256(msg).digest()
     try:
-        if ecdsa_sig != b"?":
-            check = ecdsa.verify(msg, publicKey.encode("utf-8"), ecdsa_sig)
-        elif schnorr_sig != b"?":
-            check = schnorr.verify(msg, publicKey.encode("utf-8"), schnorr_sig)
+        if ecdsa_sig != "?":
+            check = ecdsa.verify(
+                hashlib.sha256(msg).digest(),
+                binascii.unhexlify(publicKey),
+                binascii.unhexlify(ecdsa_sig)
+            )
+        elif schnorr_sig != "?":
+            check = schnorr.verify(
+                hashlib.sha256(msg).digest(),
+                binascii.unhexlify(publicKey),
+                binascii.unhexlify(schnorr_sig)
+            )
         if not check:
             return 400, {"success": False, "msg": "bad signature"}
     except Exception as error:
-        print(traceback.format_exc())
+        lystener.logMsg(traceback.format_exc())
         return 400, {
             "success": False,
             "error": "%r" % error
         }
 
-    return func(**payload)
+    func(**payload)
+    return 200, {"success": True, "msg": "call granted"}
 
 
 def extractPayload(data):
     try:
         payload = json.loads(data)
     except Exception as error:
-        print(traceback.format_exc())
+        lystener.logMsg(traceback.format_exc())
         return 406, {
             "success": False,
             "msg": "error processing data: %r" % error
