@@ -7,7 +7,7 @@
 
 ## Supported blockchain
 
- * [X] Ark-v2
+  * [X] Ark-v2
 
 ## Concept
 
