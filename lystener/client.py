@@ -46,8 +46,7 @@ def ecdsa_sign(msg, privateKey):
 def create_header(privateKey, payload, method="ecdsa"):
     salt = binascii.hexlify(os.urandom(32))
     salt = salt.decode("utf-8") if isinstance(salt, bytes) else salt
-
-    msg = (jsonHash(payload) + salt + rest.GET.salt().get("salt", "?"))
+    msg = salt + rest.GET.salt().get("salt", "?")
 
     headers = {"Salt": salt}
     publicKey = secp256k1.PublicKey.from_seed(binascii.unhexlify(privateKey))

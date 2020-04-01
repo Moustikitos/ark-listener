@@ -253,7 +253,7 @@ def managePutDelete(method, path, payload, headers):
     # signature
     schnorr_sig = headers.get("Schnorr-sig", "?")
     ecdsa_sig = headers.get("Ecdsa-sig", "?")
-    msg = (jsonHash(payload) + headers.get("Salt", "") + Seed.get())
+    msg = headers.get("Salt", "") + Seed.get()
     # Note that client has to define its own salt value and get a 1-min-valid
     # random seed from lystener server.
     # See /salt endpoint

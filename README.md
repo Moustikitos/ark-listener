@@ -45,7 +45,7 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
-`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
+`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (see `./lys grant`) :
 
 ```json
 [
@@ -57,7 +57,9 @@ ark-listener/bash/activate
 Associated private keys are then granted to send PUT and DELETE calls to listener server using `client` module. The private key is never broadcasted.
 
 ```python
->>> from lystener import client
+>>> from lystener import client, rest
+>>> # connection to listener is mandatory for security check
+>>> rest.connect("http://{ip_0}:{port_0}")
 >>> client.link()
 ... Type or paste your secret>
 >>> # once private key generated, security headers are used to sent PUT or
@@ -71,18 +73,18 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ...    function="forger.logSomething",
 ...    event="block.forged",
 ...    conditions=[("totalFee", "gte", 100000000)],
-...    emitter="http://{ip_0}{port_0}",  # blockchain node {ip}:{port}
+...    emitter="http://{ip_2}{port_2}",  # blockchain node {ip}:{port}
 ...    receiver="http://{ip_1}:{port_1}",  # listener {ip}:{port} listening 
-...    peer="http://{ip_2}:{port_2}"  # listener {ip}:{port} registering
+...    peer="http://{ip_0}:{port_0}"  # listener {ip}:{port} registering
 ... )
 >>> # /listener/destroy endpoint
 >>> client.DELETE.listener.destroy(
 ...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
-...    peer="http://{ip_2}:{port_2}"  # listener server {ip}:{port=5001}
+...    peer="http://{ip_0}:{port_0}"  # listener server {ip}:{port=5001}
 ... )
 >>> # in both case, peer can be omitted if connection realised first :
 >>> from lystener import rest
->>> rest.connect("http://{ip_2}:{port_2}")  # listener {ip}:{port} registering
+>>> rest.connect("http://{ip_0}:{port_0}")  # listener {ip}:{port} registering
 ```
 
 ## Launch listener
@@ -136,6 +138,7 @@ Usage:
    lys start-listening [-p <port>]
    lys restart-listeners
    lys stop-listening
+   lys grant <public-key>...
    lys show-log
    lys public-ip
 
@@ -149,6 +152,7 @@ Subcommands:
    start-listening   : start/restart listener server
    restart-listeners : restart listener server
    stop-listening    : stop listener server
+   grant             : allow remote controle to public key owner
    show-log          : show server log
    public-ip         : get public ip
 ```
