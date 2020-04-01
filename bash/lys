@@ -65,6 +65,11 @@ def start_listening(args={}, **options):
     os.system("sudo mv ~/lys.service /etc/systemd/system")
     os.system("sudo systemctl daemon-reload")
     checkPluginDependencies()
+    # remove salt file
+    salt = os.path.join(lystener.JSON, "salt")
+    if os.path.exists(salt):
+        os.remove(salt)
+    # restart or start
     if not os.system("sudo systemctl restart lys"):
         os.system("sudo systemctl start lys")
 
