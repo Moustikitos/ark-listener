@@ -62,12 +62,11 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ... Type or paste your secret>
 >>> # once private key generated, security headers are used to sent PUT or
 >>> # DELETE call (add or remove listener remotly), emitter is the blockchain
->>> # node sending the webhook. listener server public ip will be used if no
->>> # receiver is defined
+>>> # node sending the webhook, it is not mandatory if listener is installed 
+>>> # on blockchain node. Listener server public ip will be used if no
+>>> # receiver is defined.
 >>>
 >>> # /listener/deploy endpoint
->>> #  * if receiver is not defined, peer will be the receiver
->>> #  * emitter can be ommited if listener is installed on blockchain node
 >>> client.PUT.listener.deploy(
 ...    function="forger.logSomething",
 ...    event="block.forged",
@@ -81,9 +80,9 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
 ...    peer="http://{ip_2}:{port_2}"  # listener server {ip}:{port=5001}
 ... )
->>> # in both case, peer can be omitted if connection realised first
+>>> # in both case, peer can be omitted if connection realised first :
 >>> from lystener import rest
->>> rest.connect("http://{ip_2}:{port_2}")
+>>> rest.connect("http://{ip_2}:{port_2}")  # listener {ip}:{port} registering
 ```
 
 ## Launch listener
