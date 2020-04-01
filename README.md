@@ -45,7 +45,7 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
-`lystener` also allow remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
+`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
 
 ```json
 [
@@ -60,10 +60,10 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 >>> from lystener import client
 >>> client.link()
 ... Type or paste your secret>
->>> # once private key generated, security headers are used
->>> # to sent PUT or DELETE call (add or remove listener remotly)
->>> # emitter is the blockchain webhook emitter. listener server 
->>> # public ip will be used if no receiver is defined
+>>> # once private key generated, security headers are used to sent PUT or
+>>> # DELETE call (add or remove listener remotly), emitter is the blockchain
+>>> # node sending the webhook. listener server public ip will be used if no
+>>> # receiver is defined
 >>>
 >>> # /listener/deploy endpoint
 >>> client.PUT.listener.deploy(
