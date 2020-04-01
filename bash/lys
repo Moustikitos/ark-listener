@@ -80,6 +80,10 @@ def stop_listening(args={}, **options):
 
 def restart_listeners(args={}, **options):
     checkPluginDependencies()
+    # remove salt file
+    salt = os.path.join(lystener.JSON, "salt")
+    if os.path.exists(salt):
+        os.remove(salt)
     os.system("sudo systemctl restart lys")
 
 

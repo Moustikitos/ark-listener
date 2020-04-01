@@ -25,7 +25,7 @@ bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master
 
 ### Deploy listener
 
-Execute `forger.logSomething` on `transaction.applied` event
+Execute `forger.logSomething` on `transaction.applied` event :
 
 ```bash
 cd ~
@@ -45,7 +45,7 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
-`lystener` allow remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
+`lystener` also allow remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
 
 ```json
 [
@@ -54,7 +54,7 @@ ark-listener/bash/activate
 ]
 ```
 
-Then associated private keys are granted to send PUT and DELETE calls to listener server using `client` module. The private key is never broadcasted.
+Associated private keys are then granted to send PUT and DELETE calls to listener server using `client` module. The private key is never broadcasted.
 
 ```python
 >>> from lystener import client
@@ -108,6 +108,8 @@ configparser
 from dposlib import rest
 [...]
 ```
+
+Requirements are checked, and installed if missing, on each startup from `./lys start-listening` command.
 
 ## How can I check deployed listeners ?
 
