@@ -66,16 +66,24 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 >>> # receiver is defined
 >>>
 >>> # /listener/deploy endpoint
+>>> #  * if receiver is not defined, peer will be the receiver
+>>> #  * emitter can be ommited if listener is installed on blockchain node
 >>> client.PUT.listener.deploy(
 ...    function="forger.logSomething",
 ...    event="block.forged",
 ...    conditions=[("totalFee", "gte", 100000000)],
-...    emitter="http://dpos.arky-delegate.info:4004"
+...    emitter="http://{ip_0}{port_0}",  # blockchain node {ip}:{port}
+...    receiver="http://{ip_1}:{port_1}",  # listener {ip}:{port} listening 
+...    peer="http://{ip_2}:{port_2}"  # listener {ip}:{port} registering
 ... )
 >>> # /listener/destroy endpoint
 >>> client.DELETE.listener.destroy(
-...    id="fa67d0c3-4d88-4038-9818-573d9beac84b"
+...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
+...    peer="http://{ip_2}:{port_2}"  # listener server {ip}:{port=5001}
 ... )
+>>> # in both case, peer can be omitted if connection realised first
+>>> from lystener import rest
+>>> rest.connect("http://{ip_2}:{port_2}")
 ```
 
 ## Launch listener

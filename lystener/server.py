@@ -428,8 +428,8 @@ def deployListener(payload):
         )
 
     resp = rest.POST.api.webhooks(
-        event=payload["event"], peer=emitter, target=receiver,
-        conditions=conditions
+        event=payload["event"], target=receiver, conditions=conditions,
+        peer=emitter
     )
     if "data" in resp:
         webhook = resp["data"]
