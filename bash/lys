@@ -8,6 +8,7 @@ Usage:
    lys start-listening [-p <port>]
    lys restart-listeners
    lys stop-listening
+   lys grant <public-key>...
    lys show-log
    lys public-ip
 
@@ -21,13 +22,16 @@ Subcommands:
    start-listening   : start/restart listener server
    restart-listeners : restart listener server
    stop-listening    : stop listener server
+   grant             : allow remote controle to public key owner
    show-log          : show server log
    public-ip         : get public ip
 """
 
 import os
 import sys
+import json
 import docopt
+import binascii
 
 # add git installation
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
@@ -35,7 +39,7 @@ sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import lystener
-from lystener import rest, checkPluginDependencies
+from lystener import secp256k1, rest, checkPluginDependencies
 
 
 # ubuntu systemd service template
@@ -89,6 +93,36 @@ def restart_listeners(args={}, **options):
 
 def show_log(args={}, **options):
     os.system("sudo journalctl -u lys -ef")
+
+
+def grant(args={}, **options):
+    auth = lystener.loadJson("auth")
+    if not len(auth):
+        auth = []
+    for elem in args.get("<public-key>", []):
+        try:
+            secp256k1.point_from_encoded(binascii.unhexlify(elem))
+        except Exception:
+            wallet = rest.GET.api.wallets(
+                elem, peer="https://explorer.ark.io:8443"
+            ).get("data", {})
+            puk = wallet.get("publicKey", False)
+            if puk:
+                if int(wallet.get("balance", "0")) >= 10000000000:
+                    auth.append(wallet["publicKey"])
+                    lystener.logMsg(
+                        "%s granted as %s" % (elem, wallet["publicKey"])
+                    )
+                else:
+                    lystener.logMsg(
+                        "not enough staking on %s" % wallet["address"]
+                    )
+            else:
+                lystener.logMsg("%s can't be granted" % elem)
+        else:
+            lystener.logMsg("%s granted" % elem)
+            auth.append(elem)
+    lystener.dumpJson(list(set(auth)), "auth")
 
 
 def deploy_listener(args={}, **options):
