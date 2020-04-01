@@ -45,6 +45,39 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
+`lystener` allow remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder :
+
+```json
+[
+  "030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe110d60a15e9",
+  "02c232b067bf2eda5163c2e187c1b206a9f876d8767a0f1a3f6c1718541af3bd4d"
+]
+```
+
+Then associated private keys are granted to send PUT and DELETE calls to listener server using `client` module. The private key is never broadcasted.
+
+```python
+>>> from lystener import client
+>>> client.link()
+... Type or paste your secret>
+>>> # once private key generated, security headers are used
+>>> # to sent PUT or DELETE call (add or remove listener remotly)
+>>> # emitter is the blockchain webhook emitter. listener server 
+>>> # public ip will be used if no receiver is defined
+>>>
+>>> # /listener/deploy endpoint
+>>> client.PUT.listener.deploy(
+...    function="forger.logSomething",
+...    event="block.forged",
+...    conditions=[("totalFee", "gte", 100000000)],
+...    emitter="http://dpos.arky-delegate.info:4004"
+... )
+>>> # /listener/destroy endpoint
+>>> client.DELETE.listener.destroy(
+...    id="fa67d0c3-4d88-4038-9818-573d9beac84b"
+... )
+```
+
 ## Launch listener
 
 Your listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
