@@ -74,7 +74,8 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ... )
 >>> # /listener/destroy endpoint
 >>> client.DELETE.listener.destroy(
-...    id="fa67d0c3-4d88-4038-9818-573d9beac84b"
+...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
+...    peer="http://dpos.arky-delegate.info:4004"
 ... )
 ```
 
