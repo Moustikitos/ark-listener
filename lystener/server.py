@@ -10,6 +10,7 @@ import lystener
 import datetime
 import traceback
 
+from lystener import rest
 from lystener.secp256k1 import ecdsa, schnorr
 from collections import OrderedDict
 
@@ -24,11 +25,6 @@ else:
 
     def getHeader(http_msg, key, alt=False):
         http_msg.getheader(key, alt)
-
-ENDPOINT = {
-    "PUT": {"/listener/deploy": lambda *a, **k: None},
-    "DELETE": {"/listener/destroy": lambda *a, **k: None}
-}
 
 PATTERN = re.compile(r"^/([0-9a-zA-Z_]*)/([0-9a-zA-Z_]*)$")
 CURSOR = None
@@ -254,8 +250,8 @@ def managePutDelete(method, path, payload, headers):
     msg = (
         jsonHash(payload) + headers.get("Salt", "") + Seed.get()
     ).encode("utf-8")
-    # Note that client have to define its own salt value and get a 1-min-valid
-    # random seed from lystener.
+    # Note that client has to define its own salt value and get a 1-min-valid
+    # random seed from lystener server.
     # See /salt endpoint
     try:
         if ecdsa_sig != "?":
@@ -274,13 +270,13 @@ def managePutDelete(method, path, payload, headers):
             return 400, {"success": False, "msg": "bad signature"}
     except Exception as error:
         lystener.logMsg(traceback.format_exc())
-        return 400, {
-            "success": False,
-            "error": "%r" % error
-        }
-
-    func(**payload)
-    return 200, {"success": True, "msg": "call granted"}
+        return 400, {"success": False, "error": "%r" % error}
+    # execute endpoint and catch errors
+    try:
+        return func(payload)
+    except Exception as error:
+        lystener.logMsg(traceback.format_exc())
+        return 400, {"success": False, "error": "%r" % error}
 
 
 def extractPayload(data):
@@ -401,3 +397,71 @@ def listenerState():
         data.append(info)
 
     return data
+
+
+def deployListener(payload):
+    function = payload["function"].replace(".", "/")
+    emitter = payload.get(
+        "emitter",
+        "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER
+    )
+    receiver = payload.get(
+        "receiver",
+        ("%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) +
+        "/" + function.replace(".", "/")
+    )
+
+    if "regexp" in payload:
+        conditions = [{
+            "key": "vendorField",
+            "condition": "regexp",
+            "value": payload["regexp"]
+        }]
+    elif "conditions" in payload:
+        conditions = list(
+            {"key": k, "condition": c, "value": v} for k, c, v in
+            payload["conditions"]
+        )
+
+    resp = rest.POST.api.webhooks(
+        event=payload["event"], peer=emitter, target=receiver,
+        conditions=conditions
+    )
+    if "data" in resp:
+        webhook = resp["data"]
+        webhook["peer"] = emitter
+        lystener.dumpJson(webhook, webhook["token"][:32] + ".json")
+        lystener.logMsg("%s webhook set" % function)
+        return 200, resp
+    else:
+        lystener.logMsg("%s webhook not set" % function)
+        return 400, resp
+
+
+def destroyListener(payload):
+
+    id_ = payload.get("id", payload.get("_id", payload.get("id_", False)))
+    webhook = {}
+    for name in [n for n in os.listdir(lystener.JSON) if n.endswith(".json")]:
+        data = lystener.loadJson(name)
+        if data["id"] == id_:
+            webhook = data
+            break
+
+    if not webhook:
+        return 400, {"success": False, "msg": "webhook %s not found" % id_}
+
+    # delete webhook using its id and parent peer
+    rest.DELETE.api.webhooks("%s" % webhook["id"], peer=webhook["peer"])
+    # delete the webhook configuration
+    os.remove(os.path.join(lystener.JSON, name))
+    msg = "webhook %s destroyed" % id_
+    lystener.logMsg(msg)
+
+    return 200, {"success": True, "msg": msg}
+
+
+ENDPOINT = {
+    "PUT": {"/listener/deploy": deployListener},
+    "DELETE": {"/listener/destroy": destroyListener}
+}
