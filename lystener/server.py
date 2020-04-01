@@ -31,6 +31,7 @@ CURSOR = None
 
 
 class Seed:
+    # this class act like it was a module
 
     random = os.urandom(32)
     utc_data = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M Z")
@@ -58,9 +59,12 @@ class Seed:
 
     @staticmethod
     def start():
-        lystener.dumpJson({"locked": True}, "salt")
-        lystener.setInterval(61)(Seed.update)()
-        Seed.dump()
+        if not lystener.loadJson("salt").get("locked", False):
+            lystener.dumpJson({"locked": True}, "salt")
+            lystener.setInterval(61)(Seed.update)()
+            Seed.dump()
+            return True
+        return False
 
     @staticmethod
     def get(pin=False):
@@ -79,14 +83,16 @@ class Seed:
 
 class WebhookApp:
 
+    DB = None
+
     def __init__(self, host="127.0.0.1", port=5000):
         global CURSOR
-        if CURSOR is None:
-            CURSOR = lystener.initDB().cursor()
         self.host = host
         self.port = port
-        if not lystener.loadJson("salt").get("locked", False):
-            Seed.start()
+        WebhookApp.DB = lystener.initDB()
+        if CURSOR is None:
+            CURSOR = WebhookApp.DB.cursor()
+        Seed.start()
 
     def __call__(self, environ, start_response):
         """
@@ -247,22 +253,20 @@ def managePutDelete(method, path, payload, headers):
     # signature
     schnorr_sig = headers.get("Schnorr-sig", "?")
     ecdsa_sig = headers.get("Ecdsa-sig", "?")
-    msg = (
-        jsonHash(payload) + headers.get("Salt", "") + Seed.get()
-    ).encode("utf-8")
+    msg = (jsonHash(payload) + headers.get("Salt", "") + Seed.get())
     # Note that client has to define its own salt value and get a 1-min-valid
     # random seed from lystener server.
     # See /salt endpoint
     try:
         if ecdsa_sig != "?":
             check = ecdsa.verify(
-                hashlib.sha256(msg).digest(),
+                hashlib.sha256(msg.encode("utf-8")).digest(),
                 binascii.unhexlify(publicKey),
                 binascii.unhexlify(ecdsa_sig)
             )
         elif schnorr_sig != "?":
             check = schnorr.verify(
-                hashlib.sha256(msg).digest(),
+                hashlib.sha256(msg.encode("utf-8")).digest(),
                 binascii.unhexlify(publicKey),
                 binascii.unhexlify(schnorr_sig)
             )
@@ -400,7 +404,7 @@ def listenerState():
 
 
 def deployListener(payload):
-    function = payload["function"].replace(".", "/")
+    function = payload["function"]
     emitter = payload.get(
         "emitter",
         "%(scheme)s://%(ip)s:%(port)s" % rest.WEBHOOK_PEER
@@ -462,6 +466,15 @@ def destroyListener(payload):
 
 
 ENDPOINT = {
-    "PUT": {"/listener/deploy": deployListener},
-    "DELETE": {"/listener/destroy": destroyListener}
+    "GET": {
+        "/": lambda *a, **k: None,
+        "/salt": lambda *a, **k: None,
+        "/pin": lambda *a, **k: None,
+    },
+    "PUT": {
+        "/listener/deploy": deployListener
+    },
+    "DELETE": {
+        "/listener/destroy": destroyListener
+    }
 }

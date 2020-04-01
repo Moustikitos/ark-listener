@@ -32,6 +32,10 @@ lystener.dumpJson(
 )
 
 
+def connect(peer):
+    return EndPoint.connect(peer)
+
+
 class EndPoint(object):
 
     timeout = 5
