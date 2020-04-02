@@ -45,9 +45,8 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
-`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`).
+`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`). See below a valid `auth` file :
 
-Valid `auth` file instance :
 ```json
 [
   "030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe110d60a15e9",
@@ -88,7 +87,7 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 >>> rest.connect("http://{ip_0}:{port_0}")  # listener {ip}:{port} registering
 ```
 
-If `client` module not to be used, to be accepted, HTTP request must provide elements below in the headers :
+If `client` module not to be used, HTTP request must provide elements below in the headers :
 
 ```raw
 Public-key: <secp256k1-public-key>
@@ -101,12 +100,12 @@ Signature is issued on concatenation of random Salt and another one provided by 
 
 ## Launch listener
 
-Listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
-
 ```bash
 ~/ark-listener/bash/activate
 ~/lys start-listening
 ```
+
+Listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
 
 ## Where is stored code to execute ?
 
