@@ -32,7 +32,6 @@ CURSOR = None
 
 class Seed:
     # this class act like it was a module
-
     random = os.urandom(32)
     utc_data = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M Z")
 
@@ -47,21 +46,21 @@ class Seed:
     @staticmethod
     def dump():
         h = hashlib.sha256(
-            Seed.utc_data if isinstance(Seed.utc_data, bytes)
-            else Seed.utc_data.encode("utf-8")
+            (
+                Seed.utc_data if isinstance(Seed.utc_data, bytes)
+                else Seed.utc_data.encode("utf-8")
+            )
+            + binascii.hexlify(Seed.random)
         ).hexdigest()
-        r = binascii.hexlify(Seed.random)
         salt = lystener.loadJson("salt")
-        salt["salt"] = \
-            (h.decode("utf-8") if isinstance(h, bytes) else h) + \
-            (r.decode("utf-8") if isinstance(r, bytes) else r)
+        salt["salt"] = h.decode("utf-8") if isinstance(h, bytes) else h
         lystener.dumpJson(salt, "salt")
 
     @staticmethod
     def start():
         if not lystener.loadJson("salt").get("locked", False):
             lystener.dumpJson({"locked": True}, "salt")
-            lystener.setInterval(61)(Seed.update)()
+            lystener.setInterval(15)(Seed.update)()
             Seed.dump()
             return True
         return False
@@ -230,59 +229,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
         )
 
 
-def managePutDelete(method, path, payload, headers):
-    # check if endpoint defined
-    func = ENDPOINT.get(method, {}).get(path, False)
-    if not func:
-        return 403, {"success": False, "msg": "invalid endpoint"}
-
-    # check if publick key defined in header is an authorized one
-    # auth is a list of public keys. Because loadJson returns a void
-    # dict if no file found, the if condition acts same as if it was a list
-    publicKey = headers.get("Public-key", "?")
-    if publicKey not in lystener.loadJson("auth"):
-        return 400, {"success": False, "msg": "not authorized"}
-
-    # load payload as json, if value != 200 --> payload is not compliant with
-    # application/json mime asked
-    value, resp, payload = extractPayload(payload)
-    if value != 200:
-        return resp
-
-    # get signature as ecdsa or schnorr and generate msg used to issue
-    # signature
-    schnorr_sig = headers.get("Schnorr-sig", "?")
-    ecdsa_sig = headers.get("Ecdsa-sig", "?")
-    msg = headers.get("Salt", "") + Seed.get()
-    # Note that client has to define its own salt value and get a 1-min-valid
-    # random seed from lystener server.
-    # See /salt endpoint
-    try:
-        if ecdsa_sig != "?":
-            check = ecdsa.verify(
-                hashlib.sha256(msg.encode("utf-8")).digest(),
-                binascii.unhexlify(publicKey),
-                binascii.unhexlify(ecdsa_sig)
-            )
-        elif schnorr_sig != "?":
-            check = schnorr.verify(
-                hashlib.sha256(msg.encode("utf-8")).digest(),
-                binascii.unhexlify(publicKey),
-                binascii.unhexlify(schnorr_sig)
-            )
-        if not check:
-            return 400, {"success": False, "msg": "bad signature"}
-    except Exception as error:
-        lystener.logMsg(traceback.format_exc())
-        return 400, {"success": False, "error": "%r" % error}
-    # execute endpoint and catch errors
-    try:
-        return func(payload)
-    except Exception as error:
-        lystener.logMsg(traceback.format_exc())
-        return 400, {"success": False, "error": "%r" % error}
-
-
 def extractPayload(data):
     try:
         payload = json.loads(data)
@@ -301,6 +247,47 @@ def jsonHash(*args, **kwargs):
     raw = re.sub(r"[\s]*", "", json.dumps(data))
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return h.decode() if isinstance(h, bytes) else h
+
+
+def managePutDelete(method, path, payload, headers):
+    try:
+        # check if endpoint defined
+        func = ENDPOINT.get(method, {}).get(path, False)
+        if not func:
+            return 403, {"success": False, "msg": "invalid endpoint"}
+
+        # check if publick key defined in header is an authorized one
+        # auth is a list of public keys. Because loadJson returns a void
+        # dict if no file found, the if condition acts same as if it was a list
+        publicKey = headers.get("Public-key", "?")
+        if publicKey not in lystener.loadJson("auth"):
+            return 400, {"success": False, "msg": "not authorized"}
+
+        # load payload as json, if value != 200 --> payload is not compliant with
+        # application/json mime asked
+        value, resp, payload = extractPayload(payload)
+        if value != 200:
+            return value, resp
+
+        # get signature as ecdsa or schnorr and generate msg used to issue
+        # signature
+        signature = headers["Signature"]
+        method = headers.get("Method", "ecdsa")
+        msg = headers["Salt"] + Seed.get()
+        # Note that client has to define its own salt value and get a 1-min-valid
+        # random seed from lystener server.
+        # See /salt endpoint
+        if not (schnorr.verify if method == "schnorr" else ecdsa.verify)(
+            hashlib.sha256(msg.encode("utf-8")).digest(),
+            binascii.unhexlify(publicKey),
+            binascii.unhexlify(signature)
+        ):
+            return 400, {"success": False, "msg": "bad signature"}
+        # execute endpoint
+        return func(payload)
+    except Exception as error:
+        lystener.logMsg(traceback.format_exc())
+        return 400, {"success": False, "error": "%r" % error}
 
 
 def callListener(payload, authorization, module, name):

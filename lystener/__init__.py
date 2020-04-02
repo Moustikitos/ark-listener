@@ -295,7 +295,7 @@ class TaskExecutioner(threading.Thread):
                     error = True
                     msg = "python definition %s not found in %s" % \
                           (name, module)
-
+            # ATOMIC ACTION STARTS
             # daemon waits here to log results, update database and clean
             # memory
             TaskExecutioner.LOCK.acquire()
@@ -326,6 +326,7 @@ class TaskExecutioner(threading.Thread):
                         del obj
 
             TaskExecutioner.LOCK.release()
+            # ATOMIC ACTION ENDS
 
 
 # start 3 threads

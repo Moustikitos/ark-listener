@@ -45,8 +45,9 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
-`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (see `./lys grant`) :
+`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`).
 
+Valid `auth` file instance :
 ```json
 [
   "030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe110d60a15e9",
@@ -82,14 +83,25 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
 ...    peer="http://{ip_0}:{port_0}"  # listener server {ip}:{port=5001}
 ... )
->>> # in both case, peer can be omitted if connection realised first :
+>>> # in both case, peer can be omitted if connection established first :
 >>> from lystener import rest
 >>> rest.connect("http://{ip_0}:{port_0}")  # listener {ip}:{port} registering
 ```
 
+If `client` module not to be used, to be accepted, HTTP request must provide elements below in the headers :
+
+```raw
+Public-key: <secp256k1-public-key>
+Signature: <[der-stringder]|64-length-hex-string>
+Method: <[ecdsa]|schnorr>
+Salt: <hex-string>
+```
+
+Signature is issued on concatenation of random Salt and another one provided by listener at `/salt` endpoint. If  `Method` omitted, `ecdsa` signature check is used.
+
 ## Launch listener
 
-Your listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
+Listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
 
 ```bash
 ~/ark-listener/bash/activate
