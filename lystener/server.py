@@ -139,8 +139,8 @@ class WebhookApp:
             value, resp = managePutDelete(
                 method, path, environ["wsgi.input"].read(), {
                     "Public-key": environ.get("HTTP_PUBLIC_KEY", "?"),
-                    "Schnorr-sig": environ.get("HTTP_SCHNORR_SIG", "?"),
-                    "Ecdsa-sig": environ.get("HTTP_ECDSA_SIG", "?"),
+                    "Signature": environ.get("HTTP_SIGNATURE", "?"),
+                    "Method": environ.get("HTTP_METHOD", "ecdsa"),
                     "Salt": environ.get("HTTP_SALT", "")
                 }
             )
