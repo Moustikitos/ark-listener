@@ -275,7 +275,7 @@ def managePutDelete(method, path, payload, headers):
         if value != 200:
             return value, resp
 
-        # get signature as ecdsa or schnorr and generate msg used to issue
+        # get method as ecdsa or schnorr and generate msg used to issue
         # signature
         signature = headers["Signature"]
         method = headers.get("Method", "ecdsa")
