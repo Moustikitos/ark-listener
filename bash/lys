@@ -106,17 +106,12 @@ def grant(args={}, **options):
             wallet = rest.GET.api.wallets(
                 elem, peer="https://explorer.ark.io:8443"
             ).get("data", {})
-            puk = wallet.get("publicKey", False)
-            if puk:
-                if int(wallet.get("balance", "0")) >= 10000000000:
-                    auth.append(wallet["publicKey"])
-                    lystener.logMsg(
-                        "%s granted as %s" % (elem, wallet["publicKey"])
-                    )
-                else:
-                    lystener.logMsg(
-                        "not enough staking on %s" % wallet["address"]
-                    )
+            puk = wallet.get("publicKey", None)
+            if puk is not None:
+                auth.append(wallet["publicKey"])
+                lystener.logMsg(
+                    "%s granted as %s" % (elem, wallet["publicKey"])
+                )
             else:
                 lystener.logMsg("%s can't be granted" % elem)
         else:
