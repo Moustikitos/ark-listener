@@ -389,6 +389,7 @@ def listenerState():
         info["counts"] = counts.get(webhook["token"][:32], 0)
         info["id"] = webhook["id"]
         info["event"] = webhook["event"]
+        info["call"] = ".".join(webhook["target"].split("/")[-2:])
         info["conditions"] = webhook["conditions"]
         info["peer"] = webhook["peer"]
         data.append(info)
