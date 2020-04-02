@@ -29,7 +29,6 @@ Subcommands:
 
 import os
 import sys
-import json
 import docopt
 import binascii
 

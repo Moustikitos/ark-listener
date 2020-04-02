@@ -3,6 +3,7 @@
 
 import re
 import os
+import time
 import json
 import hashlib
 import binascii
@@ -67,12 +68,17 @@ class Seed:
 
     @staticmethod
     def get(pin=False):
+        salt_file = os.path.join(lystener.JSON, "salt")
         try:
             value = lystener.loadJson("salt")["salt"]
         except KeyError:
-            if not os.path.exists(os.path.join(lystener.JSON, "salt")):
+            if not os.path.exists(salt_file):
                 Seed.start()
-            return Seed.get(pin)
+            value = lystener.loadJson("salt")["salt"]
+        else:
+            if time.time() - os.path.getmtime(salt_file) > 60:
+                lystener.setInterval(15)(Seed.update)()
+                lystener.logMsg("Seed manager restarted")
         return int(value[:5], 16) if pin else value
 
     @staticmethod
