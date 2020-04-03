@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# © Toons
+# © THOORENS Bruno
 
 import re
 import json
