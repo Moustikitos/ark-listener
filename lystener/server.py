@@ -8,7 +8,6 @@ import json
 import hashlib
 import binascii
 import lystener
-import datetime
 import traceback
 
 from lystener import rest
@@ -32,53 +31,39 @@ CURSOR = None
 
 
 class Seed:
-    # this class act like it was a module
-    random = os.urandom(32)
-    utc_data = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M Z")
 
-    @staticmethod
-    def update():
-        utc_data = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M Z")
-        if utc_data != Seed.utc_data:
-            Seed.utc_data = utc_data
-            Seed.random = os.urandom(32)
-        Seed.dump()
+    FILENAME = os.path.join(lystener.JSON, "salt")
 
     @staticmethod
     def dump():
-        h = hashlib.sha256(
-            (
-                Seed.utc_data if isinstance(Seed.utc_data, bytes)
-                else Seed.utc_data.encode("utf-8")
+        if not os.path.exists(Seed.FILENAME) or (
+            os.path.exists(Seed.FILENAME) and
+            time.time() - os.path.getmtime(Seed.FILENAME) > 30
+        ):
+            h = hashlib.sha256(binascii.hexlify(os.urandom(32))).hexdigest()
+            lystener.dumpJson(
+                {"salt": h.decode("utf-8") if isinstance(h, bytes) else h},
+                "salt"
             )
-            + binascii.hexlify(Seed.random)
-        ).hexdigest()
-        salt = lystener.loadJson("salt")
-        salt["salt"] = h.decode("utf-8") if isinstance(h, bytes) else h
-        lystener.dumpJson(salt, "salt")
+            lystener.logMsg("New salt dumped !")
 
     @staticmethod
     def start():
-        if not lystener.loadJson("salt").get("locked", False):
-            lystener.dumpJson({"locked": True}, "salt")
-            lystener.setInterval(15)(Seed.update)()
-            Seed.dump()
-            return True
-        return False
+        Seed.dump()
+        lystener.logMsg("Seed manager started")
+        lystener.setInterval(16)(Seed.dump)()
 
     @staticmethod
     def get(pin=False):
-        salt_file = os.path.join(lystener.JSON, "salt")
         try:
             value = lystener.loadJson("salt")["salt"]
         except KeyError:
-            if not os.path.exists(salt_file):
+            if not os.path.exists(Seed.FILENAME):
                 Seed.start()
             value = lystener.loadJson("salt")["salt"]
         else:
-            if time.time() - os.path.getmtime(salt_file) > 60:
-                lystener.setInterval(15)(Seed.update)()
-                lystener.logMsg("Seed manager restarted")
+            if time.time() - os.path.getmtime(Seed.FILENAME) > 60:
+                Seed.start()
         return int(value[:5], 16) if pin else value
 
     @staticmethod
