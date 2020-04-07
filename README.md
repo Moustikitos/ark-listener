@@ -75,16 +75,11 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 ...    conditions=[("totalFee", "gte", 100000000)],
 ...    emitter="http://{ip_2}{port_2}",  # blockchain node {ip}:{port}
 ...    receiver="http://{ip_1}:{port_1}",  # listener {ip}:{port} listening 
-...    peer="http://{ip_0}:{port_0}"  # listener {ip}:{port} registering
 ... )
 >>> # /listener/destroy endpoint
 >>> client.DELETE.listener.destroy(
 ...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
-...    peer="http://{ip_0}:{port_0}"  # listener server {ip}:{port=5001}
 ... )
->>> # in both case, peer can be omitted if connection established first :
->>> from lystener import rest
->>> rest.connect("http://{ip_0}:{port_0}")  # listener {ip}:{port} registering
 ```
 
 If `client` module not to be used, HTTP request must provide elements below in the headers :
@@ -96,7 +91,7 @@ Method: <[ecdsa]|schnorr>
 Salt: <hex-string>
 ```
 
-Signature is issued on concatenation of random Salt and another one provided by listener at `/salt` endpoint. If  `Method` omitted, `ecdsa` signature check is used.
+Signature is issued on concatenation of random `Salt` string and another one provided by listener at `/salt` endpoint. If  `Method` omitted, `ecdsa` signature check is used.
 
 ## Launch listener
 
