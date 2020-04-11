@@ -59,7 +59,10 @@ WantedBy=multi-user.target
 
 
 def public_ip(args={}, **options):
-    sys.stdout.write("%s\n" % lystener.getPublicIp())
+    public_ip = rest.GET.plain(peer="https://www.ipecho.net").get(
+        "raw", lystener.getPublicIp()
+    )
+    sys.stdout.write("%s\n" % public_ip)
     sys.stdout.flush()
 
 

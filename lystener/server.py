@@ -12,7 +12,6 @@ import traceback
 
 from lystener import rest
 from lystener.secp256k1 import ecdsa, schnorr
-from collections import OrderedDict
 
 if lystener.PY3:
     from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -45,7 +44,6 @@ class Seed:
                 {"salt": h.decode("utf-8") if isinstance(h, bytes) else h},
                 "salt"
             )
-            lystener.logMsg("New salt dumped !")
 
     @staticmethod
     def start():
@@ -126,6 +124,7 @@ class WebhookApp:
                     "Public-key": environ.get("HTTP_PUBLIC_KEY", "?"),
                     "Signature": environ.get("HTTP_SIGNATURE", "?"),
                     "Method": environ.get("HTTP_METHOD", "ecdsa"),
+                    "Remote": environ.get("REMOTE_ADDR", "127.0.0.1"),
                     "Salt": environ.get("HTTP_SALT", "")
                 }
             )
@@ -200,6 +199,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         return self.close_request(value, resp)
 
     def do_PUT(self):
+        self.headers["Remote"] = self.client_address[0]
         return self.close_request(
             *managePutDelete(
                 "PUT", self.path, self.rfile.read(
@@ -210,6 +210,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         )
 
     def do_DELETE(self):
+        self.headers["Remote"] = self.client_address[0]
         return self.close_request(
             *managePutDelete(
                 "DELETE", self.path, self.rfile.read(
@@ -232,10 +233,8 @@ def extractPayload(data):
     return 200, {"success": True}, payload
 
 
-def jsonHash(*args, **kwargs):
-    data = sameDataSort(dict(*args, **kwargs))
-    # remove all trailing spaces, new lines, tabs etc...
-    raw = re.sub(r"[\s]*", "", json.dumps(data))
+def jsonHash(data):
+    raw = re.sub(r"[\s]*", "", json.dumps(data, sort_keys=True))
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return h.decode() if isinstance(h, bytes) else h
 
@@ -254,8 +253,8 @@ def managePutDelete(method, path, payload, headers):
         if publicKey not in lystener.loadJson("auth"):
             return 400, {"success": False, "msg": "not authorized"}
 
-        # load payload as json, if value != 200 --> payload is not compliant with
-        # application/json mime asked
+        # load payload as json, if value != 200 --> payload is not compliant
+        # with application/json mime asked
         value, resp, payload = extractPayload(payload)
         if value != 200:
             return value, resp
@@ -264,9 +263,9 @@ def managePutDelete(method, path, payload, headers):
         # signature
         signature = headers["Signature"]
         method = headers.get("Method", "ecdsa")
-        msg = headers["Salt"] + Seed.get()
-        # Note that client has to define its own salt value and get a 1-min-valid
-        # random seed from lystener server.
+        msg = headers["Remote"] + headers["Salt"] + Seed.get()
+        # Note that client has to define its own salt value and get a
+        # 1-min-valid random seed from lystener server.
         # See /salt endpoint
         if not (schnorr.verify if method == "schnorr" else ecdsa.verify)(
             hashlib.sha256(msg.encode("utf-8")).digest(),
@@ -328,27 +327,6 @@ def callListener(payload, authorization, module, name):
     else:
         lystener.logMsg("data on going to be parsed")
         return {"success": False, "message": "data on going to be parsed"}
-
-
-def sameDataSort(data, reverse=False):
-    """return a sorted object from iterable data"""
-    if isinstance(data, (list, tuple)):
-        return sorted(
-            data,
-            key=lambda e: list(e.values()) if isinstance(e, dict) else e,
-            reverse=reverse,
-        )
-    elif isinstance(data, dict):
-        result = OrderedDict()
-        for key, value in sorted(
-            [(k, v) for k, v in data.items()],
-            key=lambda e: e[0],
-            reverse=reverse
-        ):
-            result[key] = sameDataSort(value, reverse)
-        return result
-    else:
-        return data
 
 
 def listenerState():

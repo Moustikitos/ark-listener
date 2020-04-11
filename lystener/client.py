@@ -6,10 +6,13 @@ import hashlib
 import getpass
 import binascii
 
-from lystener import rest, secp256k1
+from lystener import rest, secp256k1, getPublicIp
 from lystener.secp256k1 import ecdsa, schnorr
 
 PRIVKEY = None
+PUBLIC_IP = rest.GET.plain(
+    peer="https://www.ipecho.net"
+).get("raw", getPublicIp())
 
 
 def link(secret=None):
@@ -55,7 +58,7 @@ def create_header(privateKey, payload, schnorr=False):
             )
         ),
         "Signature": (schnorr_sign if schnorr else ecdsa_sign)(
-            salt + rest.GET.salt().get("salt", "?"), privateKey
+            PUBLIC_IP + salt + rest.GET.salt().get("salt", "?"), privateKey
         )
     }
 

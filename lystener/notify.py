@@ -9,10 +9,10 @@ from lystener import loadJson, rest
 def freemobile_sendmsg(title, body):
     freemobile = loadJson("freemobile.notify", lystener.DATA)
     if freemobile != {}:
-        return rest.GET.sendmsg(
+        freemobile["msg"] = title + ":\n" + body
+        return rest.POST.sendmsg(
             peer="https://smsapi.free-mobile.fr",
-            msg=title + b":\n" + body,
-            **freemobile
+            jsonify=freemobile
         )
 
 
@@ -63,8 +63,8 @@ def twilio_messages(title, body):
 
 
 def send(title, body):
-    title = title.encode("utf-8") if not isinstance(title, bytes) else title
-    body = body.encode("utf-8") if not isinstance(body, bytes) else body
+    title = title.decode("utf-8") if isinstance(title, bytes) else title
+    body = body.decode("utf-8") if isinstance(body, bytes) else body
 
     for func in [
         freemobile_sendmsg,
@@ -73,8 +73,10 @@ def send(title, body):
         twilio_messages
     ]:
         response = func(title, body)
-        if response is not None:
-            return response
+        if isinstance(response, dict):
+            lystener.logMsg("notification response:\n%s" % response)
+            if response.get("status", 1000) < 300:
+                return response
 
 
 # slack notification

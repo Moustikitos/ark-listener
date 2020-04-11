@@ -72,8 +72,12 @@ class EndPoint(object):
         except Exception as err:
             data = {
                 "success": True, "except": True,
-                "raw": text, "error": "%r" % err
+                "raw":
+                    text.decode("utf-8") if isinstance(text, bytes)
+                    else text,
+                "error": "%r" % err
             }
+        data["status"] = res.getcode()
         return data
 
     @staticmethod
