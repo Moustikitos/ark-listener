@@ -91,7 +91,7 @@ Method: <[ecdsa]|schnorr>
 Salt: <hex-string>
 ```
 
-Signature is issued on concatenation of client public-ip with a random `Salt` string and another one provided by listener at `/salt` endpoint. If  `Method` omitted, `ecdsa` signature check is used.
+Signature is issued on concatenation of client public-ip with a random `Salt` string (provided in the header) and another one from listener `/salt` endpoint. If `Method` omitted, `ecdsa` signature check is used.
 
 ## Launch listener
 

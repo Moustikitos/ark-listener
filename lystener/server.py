@@ -124,7 +124,13 @@ class WebhookApp:
                     "Public-key": environ.get("HTTP_PUBLIC_KEY", "?"),
                     "Signature": environ.get("HTTP_SIGNATURE", "?"),
                     "Method": environ.get("HTTP_METHOD", "ecdsa"),
-                    "Remote": environ.get("REMOTE_ADDR", "127.0.0.1"),
+                    "Remote": environ.get(
+                        "HTTP_X_FORWARDED_FOR",
+                        environ.get(
+                            "REMOTE_ADDR",
+                            "127.0.0.1"
+                        )
+                    ),
                     "Salt": environ.get("HTTP_SALT", "")
                 }
             )
@@ -199,7 +205,9 @@ class WebhookHandler(BaseHTTPRequestHandler):
         return self.close_request(value, resp)
 
     def do_PUT(self):
-        self.headers["Remote"] = self.client_address[0]
+        self.headers["Remote"] = self.headers.get(
+            "X-Forwarded-For", self.client_address[0]
+        )
         return self.close_request(
             *managePutDelete(
                 "PUT", self.path, self.rfile.read(
@@ -210,7 +218,9 @@ class WebhookHandler(BaseHTTPRequestHandler):
         )
 
     def do_DELETE(self):
-        self.headers["Remote"] = self.client_address[0]
+        self.headers["Remote"] = self.headers.get(
+            "X-Forwarded-For", self.client_address[0]
+        )
         return self.close_request(
             *managePutDelete(
                 "DELETE", self.path, self.rfile.read(
