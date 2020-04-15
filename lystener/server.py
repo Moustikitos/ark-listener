@@ -244,7 +244,7 @@ def extractPayload(data):
 
 
 def jsonHash(data):
-    raw = re.sub(r"[\s]*", "", json.dumps(data, sort_keys=True))
+    raw = json.dumps(data, sort_keys=True, separators=(',', ':'))
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return h.decode() if isinstance(h, bytes) else h
 

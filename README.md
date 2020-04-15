@@ -126,6 +126,22 @@ from dposlib import rest
 
 Requirements are checked, and installed if missing, on each startup from `./lys start-listening` command.
 
+## IOT bridge plugin
+
+`lystener` bundles a simple `iot` plugin. It configures a `mosquitto` server at startup and provides a simple `forward` module to send webhook data from blockchain to a specific topic. default configuration is :
+
+```json
+{
+  "broker": "mqtt://127.0.0.1",
+  "topic": "ark/event",
+  "qos": 2
+}
+```
+
+Those defaults can be changed using json-formated file stored in `lystener/.data/iot.param` folder.
+
+You can listen blockchain noise from webhook id `8a281725-e2b2-43df-bc12-f178262352ca` at `mqtt://listen.arky-delegate.info` on `ark.event` topic. 
+
 ## How can I check deployed listeners ?
 
 The listening server redirects browser to listener details page.
