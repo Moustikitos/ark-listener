@@ -15,9 +15,8 @@ echo "branch selected = $B"
 echo
 echo installing system dependencies
 echo ==============================
-sudo apt-get -qq install python python-dev python-setuptools python-pip
 sudo apt-get -qq install python3 python3-dev python3-setuptools python3-pip
-sudo apt-get -qq install pypy pypy3
+sudo apt-get -qq install pypy3
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
 echo "done"
