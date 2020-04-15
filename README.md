@@ -25,24 +25,24 @@ bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master
 
 ### Deploy listener
 
-Execute `forger.logSomething` on `transaction.applied` event :
+Execute `dummy.logSomething` on `transaction.applied` event :
 
 ```bash
 cd ~
 ark-listener/bash/activate
 # if vendorField starts with `sc:`
 # using default webhook peer (http://127.0.0.1:4004)
-./lys deploy-listener transaction.applied forger.logSomething ^sc:.*$
+./lys deploy-listener transaction.applied dummy.logSomething ^sc:.*$
 # or
-./lys deploy-listener transaction.applied forger.logSomething vendorField regexp ^sc:.*$
+./lys deploy-listener transaction.applied dummy.logSomething vendorField regexp ^sc:.*$
 
 # if amount >= 25 arks
 # using a custom webhook peer
-./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 -w http://dpos.arky-delegate.info:4004
+./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 -w http://dpos.arky-delegate.info:4004
 
 # if amount >= 25 arks or vendorField starting with `sc:`
 # using a custom webhook peer
-./lys deploy-listener transaction.applied forger.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
+./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
 `lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`). See below a valid `auth` file :
@@ -70,7 +70,7 @@ Associated private keys are then granted to send PUT and DELETE calls to listene
 >>>
 >>> # /listener/deploy endpoint
 >>> client.PUT.listener.deploy(
-...    function="forger.logSomething",
+...    function="dummy.logSomething",
 ...    event="block.forged",
 ...    conditions=[("totalFee", "gte", 100000000)],
 ...    emitter="http://{ip_2}{port_2}",  # blockchain node {ip}:{port}
