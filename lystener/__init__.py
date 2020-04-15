@@ -83,10 +83,16 @@ def checkPluginDependencies():
                                 (error, traceback.format_exc())
                             )
                         else:
-                            if "requirements" in cfg.sections():
+                            sections = cfg.sections()
+                            if "requirements" in sections:
                                 os.system(
                                     "pip install %s" %
                                     " ".join(cfg["requirements"].keys())
+                                )
+                            if "dependencies" in sections:
+                                os.system(
+                                    "sudo apt-get install %s" %
+                                    " ".join(cfg["dependencies"].keys())
                                 )
                             logMsg("docstring exploited")
 
