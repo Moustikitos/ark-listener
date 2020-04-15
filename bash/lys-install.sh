@@ -17,7 +17,7 @@ echo installing system dependencies
 echo ==============================
 sudo apt-get -qq install python python-dev python-setuptools python-pip
 sudo apt-get -qq install python3 python3-dev python3-setuptools python3-pip
-sudo apt-get -qq install pypy
+sudo apt-get -qq install pypy pypy3
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
 echo "done"
@@ -60,11 +60,11 @@ fi
 
 if [ ! -d $VENVDIR ]; then
     echo -e "select environment:\n  1) python3\n  2) pypy"
-    read -p "[default:python]> " n
+    read -p "[default:python3]> " n
     case $n in
     1) TARGET="$(which python3)";;
-    2) TARGET="$(which pypy)";;
-    *) TARGET="$(which python)";;
+    2) TARGET="$(which pypy3)";;
+    *) TARGET="$(which python3)";;
     esac
     mkdir $VENVDIR -p
     virtualenv -p $TARGET $VENVDIR -q

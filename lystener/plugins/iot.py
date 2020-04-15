@@ -43,7 +43,8 @@ def forward(data):
         output = subprocess.check_output(
             shlex.split(cmd), stderr=subprocess.STDOUT
         )
-        output = output.decode("utf-8") if isinstance(output, bytes) else output
+        output = \
+            output.decode("utf-8") if isinstance(output, bytes) else output
 
         if "MQTT connection failed" in output or \
            "Usage:" in output or \
