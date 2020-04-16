@@ -30,20 +30,24 @@ def iotPublish(
     """
     This function sends simple message using specific venv.
     """
-        # [". %s/activate" % venv],
+
+    data = """. %(venv)s/activate
+hbmqtt_pub --url %(broker)s -t %(topic)s -m '%(message)s' --qos %(qos)s
+""" % {
+        "venv": venv,
+        "broker": broker,
+        "topic": topic,
+        "message": message,
+        "qos": qos
+    }
+
     output, errors = subprocess.Popen(
         [],
         executable='/bin/bash',
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
-    ).communicate(
-        (
-""". ~/.local/share/ark-listener/venv/bin/activate
-hbmqtt_pub --url %(broker)s -t %(topic)s -m '%(message)s' --qos %(qos)s
-""" % {"broker": broker, "topic": topic, "message": message, "qos": qos}
-        ).encode('utf-8')
-    )
+    ).communicate(data.encode('utf-8'))
 
     return (
         output.decode("utf-8") if isinstance(output, bytes) else output,
@@ -68,7 +72,7 @@ def forward(data):
            "Traceback" in output:
             return {"success": False, "msg": output, "errors": errors}
         else:
-            return {"success": True, "msg": output, "errors": errors}
+            return {"success": True, "msg": "\n".join([output, errors])}
 
     except Exception as error:
         lystener.logMsg(traceback.format_exc())
