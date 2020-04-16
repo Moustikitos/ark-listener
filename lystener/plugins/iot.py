@@ -8,6 +8,8 @@ hbmqtt
 mosquitto
 """
 
+import os
+import sys
 import json
 import lystener
 import traceback
@@ -22,13 +24,14 @@ NETWORK = {
 }
 
 
-def iot_pub(broker, topic, message, qos=2):
+def iotPublish(
+    broker, topic, message, qos=2, venv=os.path.dirname(sys.executable)
+):
     """
-    This function sends simple message to tobic using borker. It is recommended
-    to use it because lystener runs on its virtual environment.
+    This function sends simple message using specific venv.
     """
     output, errors = subprocess.Popen(
-        [". ~/.local/share/ark-listener/venv/bin/activate"],
+        [". %s/activate" % venv],
         executable='/bin/bash',
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -56,7 +59,7 @@ def forward(data):
     params = lystener.loadJson("iot.param", folder=lystener.DATA)
 
     try:
-        output, errors = iot_pub(
+        output, errors = iotPublish(
             params.get("broker", "mqtt://127.0.0.1"),
             params.get("topic", "%s/event" % NETWORK[data.get("network", 23)]),
             json.dumps(data, separators=(',', ':')),
