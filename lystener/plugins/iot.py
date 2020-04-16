@@ -9,7 +9,6 @@ mosquitto
 """
 
 import json
-import shlex
 import lystener
 import traceback
 import subprocess
@@ -23,35 +22,53 @@ NETWORK = {
 }
 
 
+def iot_pub(broker, topic, message, qos=2):
+    """
+    This function sends simple message to tobic using borker. It is recommended
+    to use it because lystener runs on its virtual environment.
+    """
+    output, errors = subprocess.Popen(
+        [". ~/.local/share/ark-listener/venv/bin/activate"],
+        executable='/bin/bash',
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    ).communicate(
+        (
+            "hbmqtt_pub --url %(broker)s "
+            "-t %(topic)s -m '%(message)s' --qos %(qos)s" % {
+                "broker": broker,
+                "topic": topic,
+                "message": message,
+                "qos": qos
+            }
+        ).encode('utf-8')
+    )
+
+    return (
+        output.decode("utf-8") if isinstance(output, bytes) else output,
+        errors.decode("utf-8") if isinstance(errors, bytes) else errors
+    )
+
+
 def forward(data):
     lystener.logMsg('data received :\n%s' % json.dumps(data, indent=2))
     params = lystener.loadJson("iot.param", folder=lystener.DATA)
 
     try:
-        cmd = (
-            "hbmqtt_pub --url %(broker)s -t %(topic)s "
-            "-m '%(message)s' --qos %(qos)s"
-        ) % {
-            "broker": params.get("broker", "mqtt://127.0.0.1"),
-            "topic": params.get(
-                "topic", "%s/event" % NETWORK[data.get("network", 23)]
-            ),
-            "message": json.dumps(data, separators=(',', ':')),
-            "qos": params.get("qos", 2)
-        }
-
-        output = subprocess.check_output(
-            shlex.split(cmd), stderr=subprocess.STDOUT
+        output, errors = iot_pub(
+            params.get("broker", "mqtt://127.0.0.1"),
+            params.get("topic", "%s/event" % NETWORK[data.get("network", 23)]),
+            json.dumps(data, separators=(',', ':')),
+            params.get("qos", 2)
         )
-        output = \
-            output.decode("utf-8") if isinstance(output, bytes) else output
 
         if "MQTT connection failed" in output or \
            "Usage:" in output or \
            "Traceback" in output:
-            return {"success": False, "msg": output}
+            return {"success": False, "msg": output, "errors": errors}
         else:
-            return {"success": True, "msg": output}
+            return {"success": True, "msg": output + errors}
 
     except Exception as error:
         lystener.logMsg(traceback.format_exc())
