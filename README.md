@@ -183,13 +183,7 @@ def iot.publish(broker, topic, message, qos=1, venv=None):
 ...    "mqtt://listen.arky-delegate.info",
 ...    "ark/event", "Simple message",
 ...    venv="~/.local/share/ark-listener/venv/bin")
-('', "[2020-04-16 20:54:40,376] :: INFO - hbmqtt_pub/2242-raspberry Connecting\
- to broker\n[2020-04-16 20:54:40,497] :: INFO - Exited state new\n[2020-04-16 \
-20:54:40,498] :: INFO - Entered state connected\n[2020-04-16 20:54:40,498] :: \
-INFO - hbmqtt_pub/2242-raspberry Publishing to 'ark/event'\n[2020-04-16 20:54:\
-40,539] :: INFO - Exited state connected\n[2020-04-16 20:54:40,539] :: INFO - \
-Entered state disconnected\n[2020-04-16 20:54:40,540] :: INFO - hbmqtt_pub/224\
-2-raspberry Disconnected from broker\n")
+('', "[2020-04-16 20:54:40,376] :: INFO - hbmqtt_pub/2242-raspberry Connecting to broker\n[2020-04-16 20:54:40,497] :: INFO - Exited state new\n[2020-04-16 20:54:40,498] :: INFO - Entered state connected\n[2020-04-16 20:54:40,498] :: INFO - hbmqtt_pub/2242-raspberry Publishing to 'ark/event'\n[2020-04-16 20:54:40,539] :: INFO - Exited state connected\n[2020-04-16 20:54:40,539] :: INFO - Entered state disconnected\n[2020-04-16 20:54:40,540] :: INFO - hbmqtt_pub/2242-raspberry Disconnected from broker\n")
 >>>
 ```
 
