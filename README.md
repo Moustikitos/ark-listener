@@ -114,10 +114,16 @@ There are two way for the plugin to be loaded :
 
 ```python
 # -*- encoding:utf-8 -*-
+#  - elements listed in [requirements] will be installed with pip
+#  - elements listed in [dependencies] will be installed with apt-get
+
 """
 [requirements]
 git+https://github.com/Moustikitos/dpos#egg=dposlib
 configparser
+
+[dependencies]
+curl
 """
 
 from dposlib import rest
@@ -128,19 +134,64 @@ Requirements are checked, and installed if missing, on each startup from `./lys 
 
 ## IOT bridge plugin
 
-`lystener` bundles `iot` plugin. It configures a `mosquitto` server at startup and provides a simple `forward` module to send webhook data from blockchain to a specific topic. default configuration is :
+`lystener` bundles `iot` plugin which transforms node into a mqtt broker using `mosquitto`.
+
+### Function `iot.forward`
+
+`iot` plugin provides a simple `forward` definition to send webhook data from blockchain to a specific topic. default configuration is :
 
 ```json
 {
+  "venv": "~/.local/share/ark-listener/venv/bin",
   "broker": "mqtt://127.0.0.1",
   "topic": "ark/event",
-  "qos": 2
+  "qos": 1
 }
 ```
 
-Those defaults can be changed using json-formated file `iot.param` stored in `lystener/.data` folder.
+Defaults can be changed using json-formated file `iot.param` stored in `lystener/.data` folder.
 
 You can listen [binance market](https://www.binance.com/en/trade/ARK_BTC) noise from webhook id [`55cd34c2-0e77-4b91-a0d8-48da6f2a8a64`](http://listen.arky-delegate.info) at `mqtt://listen.arky-delegate.info` on `ark/event` topic. 
+
+### Python interface
+
+`iot` plugins also provides a python definition, used by `iot.forward`, that allow custom mqtt publication.
+
+```python
+def iot.publish(broker, topic, message, qos=1, venv=None):
+    """
+    Send message on a topic using a specific broker. This function calls
+    hbmqtt_pub command in a python subprocess where a virtualenv folder can be
+    specified if needed (folder where `activate` script is localized).
+
+    Args:
+        broker (:class:`str`): valid borker url (ie mqtt://127.0.0.1)
+        topic (:class:`str`): topic to use
+        message (:class:`str`): message to send
+        qos (:class:`int`): quality of service [default: 2]
+        venv (:class:`str`): virtualenv folder [default: None]
+    Returns:
+        :class:`str`: subprocess stdout and stderr
+    """
+```
+
+`iot` plugin is available  directly from lystener `package`.
+
+```python
+>>> from lystener import iot
+>>> iot.publish(
+...    "mqtt://listen.arky-delegate.info",
+...    "ark/event", "Simple message",
+...    venv="~/.local/share/ark-listener/venv/bin")
+('', "[2020-04-16 20:54:40,376] :: INFO - hbmqtt_pub/2242-raspberry Connecting\
+ to broker\n[2020-04-16 20:54:40,497] :: INFO - Exited state new\n[2020-04-16 \
+20:54:40,498] :: INFO - Entered state connected\n[2020-04-16 20:54:40,498] :: \
+INFO - hbmqtt_pub/2242-raspberry Publishing to 'ark/event'\n[2020-04-16 20:54:\
+40,539] :: INFO - Exited state connected\n[2020-04-16 20:54:40,539] :: INFO - \
+Entered state disconnected\n[2020-04-16 20:54:40,540] :: INFO - hbmqtt_pub/224\
+2-raspberry Disconnected from broker\n")
+>>>
+```
 
 ## How can I check deployed listeners ?
 

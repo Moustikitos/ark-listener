@@ -58,7 +58,7 @@ if [ -d $VENVDIR ]; then
 fi
 
 if [ ! -d $VENVDIR ]; then
-    echo -e "select environment:\n  1) python3\n  2) pypy"
+    echo -e "select environment:\n  1) python3\n  2) pypy3"
     read -p "[default:python3]> " n
     case $n in
     1) TARGET="$(which python3)";;

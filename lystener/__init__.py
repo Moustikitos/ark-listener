@@ -60,7 +60,8 @@ if os.path.exists(pathfile):
 def checkPluginDependencies():
     for path in [p for p in __path__[1:] if os.path.exists(p)]:
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
-            if os.path.isfile(name):
+            if os.path.isfile(name) and \
+               (name.endswith(".py") or name.endswith(".pyw")):
                 logMsg(
                     "%s - %s" % (path, os.path.basename(name.split(".")[0]))
                 )

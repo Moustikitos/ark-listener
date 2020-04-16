@@ -1,5 +1,6 @@
 # -*- encoding:utf-8 -*-
 # © THOORENS Bruno
+
 """
 [requirements]
 hbmqtt
@@ -24,9 +25,20 @@ NETWORK = {
 }
 
 
-def publish(broker, topic, message, qos=2, venv=None):
+def publish(broker, topic, message, qos=1, venv=None):
     """
-    This function sends simple message using specific venv.
+    Send message on a topic using a specific broker. This function calls
+    hbmqtt_pub command in a python subprocess where a virtualenv folder can be
+    specified if needed (folder where `activate` script is localized).
+
+    Args:
+        broker (:class:`str`): valid borker url (ie mqtt://127.0.0.1)
+        topic (:class:`str`): topic to use
+        message (:class:`str`): message to send
+        qos (:class:`int`): quality of service [default: 2]
+        venv (:class:`str`): virtualenv folder [default: None]
+    Returns:
+        :class:`str`: subprocess stdout and stderr
     """
 
     cmd = (
@@ -40,7 +52,9 @@ def publish(broker, topic, message, qos=2, venv=None):
     }
 
     if venv is not None:
-        cmd = (". %s/activate\n" % venv) + cmd
+        activate = os.path.expanduser(os.path.join(venv, "activate"))
+        if os.path.exists(activate):
+            cmd = (". %s\n" % activate) + cmd
 
     output, errors = subprocess.Popen(
         [],
@@ -61,23 +75,26 @@ def forward(data):
     params = lystener.loadJson("iot.param", folder=lystener.DATA)
 
     try:
-        output, errors = publish(
-            params.get("broker", "mqtt://127.0.0.1"),
-            params.get(
-                "topic",
-                "%s/event" % NETWORK.get(data.get("network", 23), "ark")
-            ),
-            json.dumps(data, separators=(',', ':')),
-            params.get("qos", 2),
-            os.path.dirname(sys.executable)
+        output = "\n".join(
+            publish(
+                params.get("broker", "mqtt://127.0.0.1"),
+                params.get(
+                    "topic",
+                    "%s/event" % NETWORK.get(data.get("network", 23), "ark")
+                ),
+                json.dumps(data, separators=(',', ':')),
+                params.get("qos", 1),
+                params.get("venv", os.path.dirname(sys.executable))
+            )
         )
 
         if "MQTT connection failed" in output or \
+           "command not found" in output or \
            "Usage:" in output or \
            "Traceback" in output:
-            return {"success": False, "msg": output, "errors": errors}
+            return {"success": False, "errors": output}
         else:
-            return {"success": True, "msg": "\n".join([output, errors])}
+            return {"success": True, "msg": output}
 
     except Exception as error:
         lystener.logMsg(traceback.format_exc())
