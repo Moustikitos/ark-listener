@@ -128,7 +128,7 @@ Requirements are checked, and installed if missing, on each startup from `./lys 
 
 ## IOT bridge plugin
 
-`lystener` bundles a simple `iot` plugin. It configures a `mosquitto` server at startup and provides a simple `forward` module to send webhook data from blockchain to a specific topic. default configuration is :
+`lystener` bundles `iot` plugin. It configures a `mosquitto` server at startup and provides a simple `forward` module to send webhook data from blockchain to a specific topic. default configuration is :
 
 ```json
 {
