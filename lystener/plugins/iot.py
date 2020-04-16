@@ -24,22 +24,23 @@ NETWORK = {
 }
 
 
-def iotPublish(
-    broker, topic, message, qos=2, venv=os.path.dirname(sys.executable)
-):
+def publish(broker, topic, message, qos=2, venv=None):
     """
     This function sends simple message using specific venv.
     """
 
-    data = """. %(venv)s/activate
-hbmqtt_pub --url %(broker)s -t %(topic)s -m '%(message)s' --qos %(qos)s
-""" % {
-        "venv": venv,
+    cmd = (
+        "hbmqtt_pub --url %(broker)s "
+        "-t %(topic)s -m '%(message)s' --qos %(qos)s"
+    ) % {
         "broker": broker,
         "topic": topic,
         "message": message,
         "qos": qos
     }
+
+    if venv is not None:
+        cmd = (". %s/activate\n" % venv) + cmd
 
     output, errors = subprocess.Popen(
         [],
@@ -47,7 +48,7 @@ hbmqtt_pub --url %(broker)s -t %(topic)s -m '%(message)s' --qos %(qos)s
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
-    ).communicate(data.encode('utf-8'))
+    ).communicate(cmd.encode('utf-8'))
 
     return (
         output.decode("utf-8") if isinstance(output, bytes) else output,
@@ -60,11 +61,15 @@ def forward(data):
     params = lystener.loadJson("iot.param", folder=lystener.DATA)
 
     try:
-        output, errors = iotPublish(
+        output, errors = publish(
             params.get("broker", "mqtt://127.0.0.1"),
-            params.get("topic", "%s/event" % NETWORK[data.get("network", 23)]),
+            params.get(
+                "topic",
+                "%s/event" % NETWORK.get(data.get("network", 23), "ark")
+            ),
             json.dumps(data, separators=(',', ':')),
-            params.get("qos", 2)
+            params.get("qos", 2),
+            os.path.dirname(sys.executable)
         )
 
         if "MQTT connection failed" in output or \
