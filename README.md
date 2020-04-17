@@ -45,6 +45,8 @@ ark-listener/bash/activate
 ./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
 ```
 
+### Remote deployment
+
 `lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`). See below a valid `auth` file :
 
 ```json
