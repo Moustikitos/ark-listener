@@ -45,7 +45,7 @@ def ecdsa_sign(msg, privateKey):
     )
 
 
-def create_header(privateKey, payload, schnorr=False):
+def create_header(privateKey, payload, schnorr=False, peer=None):
     salt = binascii.hexlify(os.urandom(32))
     salt = salt.decode("utf-8") if isinstance(salt, bytes) else salt
 
@@ -58,7 +58,8 @@ def create_header(privateKey, payload, schnorr=False):
             )
         ),
         "Signature": (schnorr_sign if schnorr else ecdsa_sign)(
-            PUBLIC_IP + salt + rest.GET.salt().get("salt", "?"), privateKey
+            PUBLIC_IP + salt + rest.GET.salt(peer=peer).get("salt", "?"),
+            privateKey
         )
     }
 
@@ -69,11 +70,16 @@ def secp256k1_filter(**kwargs):
     schnorr = kwargs.pop("schnorr", False)
     to_jsonify = kwargs.pop("jsonify", None)
 
+    peer = kwargs.get("peer", None)
     if privateKey is not None:
         if to_jsonify is not None:
-            headers.update(**create_header(privateKey, to_jsonify, schnorr))
+            headers.update(
+                **create_header(privateKey, to_jsonify, schnorr, peer)
+            )
         else:
-            headers.update(**create_header(privateKey, kwargs, schnorr))
+            headers.update(
+                **create_header(privateKey, kwargs, schnorr, peer)
+            )
         kwargs["headers"] = headers
 
     return kwargs
