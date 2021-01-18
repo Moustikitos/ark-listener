@@ -1,6 +1,5 @@
 wheel
 docopt
 future
-gunicorn==19.10.0; python_version < '3.0'
-gunicorn; python_version >= '3.2'
 configparser
+git+http://github.com/Moustikitos/micro-server#egg=usrv
