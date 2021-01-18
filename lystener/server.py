@@ -3,6 +3,8 @@
 
 import re
 import os
+import io
+import sys
 import time
 import json
 import hashlib
@@ -10,7 +12,7 @@ import binascii
 import lystener
 import traceback
 
-from lystener import rest
+from lystener import rest, TaskExecutioner
 from lystener.secp256k1 import ecdsa, schnorr
 
 if lystener.PY3:
@@ -27,6 +29,7 @@ else:
 
 PATTERN = re.compile(r"^/([0-9a-zA-Z_]*)/([0-9a-zA-Z_]*)$")
 CURSOR = None
+DAEMONS = None
 
 
 class Seed:
@@ -74,12 +77,14 @@ class WebhookApp:
     DB = None
 
     def __init__(self, host="127.0.0.1", port=5000):
-        global CURSOR
+        global CURSOR, DAEMONS
         self.host = host
         self.port = port
         WebhookApp.DB = lystener.initDB()
         if CURSOR is None:
             CURSOR = WebhookApp.DB.cursor()
+        if DAEMONS is None:
+            DAEMONS = [TaskExecutioner(), TaskExecutioner()]
         Seed.start()
 
     def __call__(self, environ, start_response):
@@ -105,18 +110,13 @@ class WebhookApp:
                 value = 403
 
         elif method == "GET":
-            if path == "/":
-                resp = {"success": True, "data": listenerState()}
-                value = 200
-            elif path == "/salt":
-                resp = {"success": True, "salt": Seed.get()}
-                value = 200
-            elif path == "/pin":
-                resp = {"success": True, "pin": Seed.get(pin=True)}
-                value = 200
-            else:
+            method = ENDPOINTS.get("GET", {}).get(path, None)
+            if method is None:
                 resp = {"success": False, "msg": "invalid endpoint"}
                 value = 403
+            else:
+                resp = {"success": True, "data": method()}
+                value = 200
 
         elif method in ["PUT", "DELETE"]:
             value, resp = managePutDelete(
@@ -171,18 +171,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path == "/":
-            resp = {"success": True, "data": listenerState()}
-            value = 200
-        elif self.path == "/salt":
-            resp = {"success": True, "salt": Seed.get()}
-            value = 200
-        elif self.path == "/pin":
-            resp = {"success": True, "pin": Seed.get(pin=True)}
-            value = 200
-        else:
+        method = ENDPOINTS.get("GET", {}).get(self.path, None)
+        if method is None:
             resp = {"success": False, "msg": "invalid endpoint"}
             value = 403
+        else:
+            resp = {"success": True, "data": method()}
+            value = 200
         return self.close_request(value, resp)
 
     def do_POST(self):
@@ -252,7 +247,7 @@ def jsonHash(data):
 def managePutDelete(method, path, payload, headers):
     try:
         # check if endpoint defined
-        func = ENDPOINT.get(method, {}).get(path, False)
+        func = ENDPOINTS.get(method, {}).get(path, False)
         if not func:
             return 403, {"success": False, "msg": "invalid endpoint"}
 
@@ -311,6 +306,7 @@ def callListener(payload, authorization, module, name):
     if not signature:
         signature = jsonHash(data)
 
+    signature = "%s.%s[%s]" % (module, name, signature)
     # check if signature already in database
     CURSOR.execute(
         "SELECT count(*) FROM history WHERE signature = ?", (signature,)
@@ -432,11 +428,52 @@ def destroyListener(payload):
     return 200, {"success": True, "msg": msg}
 
 
-ENDPOINT = {
+def deploy(host="0.0.0.0", port=5001):
+    normpath = os.path.normpath
+    executable = normpath(sys.executable)
+
+    with io.open("./lys.service", "w") as unit:
+        unit.write(u"""[Unit]
+Description=Lys web server
+After=network.target
+
+[Service]
+User=%(usr)s
+WorkingDirectory=%(wkd)s
+Environment=PYTHONPATH=%(path)s
+ExecStart=%(bin)s/gunicorn 'lystener.server:WebhookApp()' --bind=%(host)s:%(port)s --workers=5 --access-logfile -
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+""" % {
+            "usr": os.environ.get("USER", "unknown"),
+            "wkd": normpath(sys.prefix),
+            "path": os.path.abspath(
+                normpath(os.path.dirname(lystener.__path__[0]))
+            ),
+            "bin": os.path.dirname(executable),
+            "port": port,
+            "host": host
+        })
+
+    if os.system("%s -m pip show gunicorn" % executable) != "0":
+        os.system(
+            "%s -m pip install gunicorn%s" %
+            (executable, "" if lystener.PY3 else "==19.10.0")
+        )
+    os.system("chmod +x ./lys.service")
+    os.system("sudo mv --force ./lys.service /etc/systemd/system")
+    os.system("sudo systemctl daemon-reload")
+    if not os.system("sudo systemctl restart lys"):
+        os.system("sudo systemctl start lys")
+
+
+ENDPOINTS = {
     "GET": {
-        "/": lambda *a, **k: None,
-        "/salt": lambda *a, **k: None,
-        "/pin": lambda *a, **k: None,
+        "/": listenerState,
+        "/salt": Seed.get,
+        "/pin": lambda *a, **k: Seed.get(pin=True)
     },
     "PUT": {
         "/listener/deploy": deployListener
