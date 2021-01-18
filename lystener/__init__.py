@@ -58,6 +58,9 @@ if os.path.exists(pathfile):
 
 
 def checkPluginDependencies():
+    """
+    Walk trought all plugins and install dependencies according to docstrings
+    """
     for path in [p for p in __path__[1:] if os.path.exists(p)]:
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
             if os.path.isfile(name) and \
@@ -95,6 +98,9 @@ def checkPluginDependencies():
                                     "sudo apt-get install %s" %
                                     " ".join(cfg["dependencies"].keys())
                                 )
+                            if "commands" in sections:
+                                for cmd in cfg["commands"].keys():
+                                    os.system('/bin/bash -c "%s"' % cmd)
                             logMsg("docstring exploited")
 
 
@@ -334,7 +340,3 @@ class TaskExecutioner(threading.Thread):
 
             TaskExecutioner.LOCK.release()
             # ATOMIC ACTION END
-
-
-# start 3 threads
-DAEMONS = [TaskExecutioner(), TaskExecutioner(), TaskExecutioner()]
