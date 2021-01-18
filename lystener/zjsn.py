@@ -17,12 +17,13 @@ import json
 import base64
 
 ZIPJSON_KEY = 'base64(zip(o))'
+BZ2JSON_KEY = 'base64(bz2(o))'
 
 
-def json_compress(j, method=lambda data: zlib.compress(data)):
+def _compress(j, method=lambda data: zlib.compress(data), key=ZIPJSON_KEY):
 
     return {
-        ZIPJSON_KEY: base64.b64encode(
+        key: base64.b64encode(
             method(
                 json.dumps(j, separators=(',', ':')).encode('utf-8')
             )
@@ -30,35 +31,43 @@ def json_compress(j, method=lambda data: zlib.compress(data)):
     }
 
 
-def json_decompress(j, insist=True, method=lambda data: zlib.decompress(data)):
+def decompress(j, insist=False):
     try:
-        assert (j[ZIPJSON_KEY])
-        assert (set(j.keys()) == {ZIPJSON_KEY})
+        assert len(j) == 1
+        key, value = list(j.items())[0]
+        assert key in [ZIPJSON_KEY, BZ2JSON_KEY]
     except Exception:
         if insist:
-            raise RuntimeError("JSON not in the expected format {" + str(ZIPJSON_KEY) + ": zipstring}")
+            raise RuntimeError("JSON not in the expected format")
         else:
             return j
+    else:
+        method = zlib.decompress if key == ZIPJSON_KEY else \
+                 bz2.decompress if key == BZ2JSON_KEY else \
+                 lambda *a, **k: b""
 
     try:
-        j = method(base64.b64decode(j[ZIPJSON_KEY]))
+        j = method(base64.b64decode(value))
     except Exception:
-        raise RuntimeError("Could not decode/unzip the contents")
-
+        raise RuntimeError("can not decodeor decompress content")
     try:
         j = json.loads(j)
     except Exception:
-        raise RuntimeError("Could interpret the unzipped contents")
+        raise RuntimeError("can not interpret the decompressed content")
 
     return j
 
 
 def bzip(j):
-    return json_compress(j, lambda data: bz2.compress(data, compresslevel=9))
+    return _compress(
+        j, lambda data: bz2.compress(data, compresslevel=9), BZ2JSON_KEY
+    )
 
 
-def unbzip(j):
-    return json_decompress(j, lambda data: bz2.decompress(data))
+def zip(j):
+    return _compress(
+        j, lambda data: zlib.compress(data), ZIPJSON_KEY
+    )
 
 
 if __name__ == '__main__':
@@ -76,29 +85,29 @@ if __name__ == '__main__':
         items = [123, "123", unzipped]
 
         def test_json_zip(self):
-            self.assertEqual(self.zipped, json_compress(self.unzipped))
+            self.assertEqual(self.zipped, _compress(self.unzipped))
 
         def test_json_unzip(self):
-            self.assertEqual(self.unzipped, json_decompress(self.zipped))
+            self.assertEqual(self.unzipped, decompress(self.zipped))
 
         def test_json_zipunzip(self):
             for item in self.items:
-                self.assertEqual(item, json_decompress(json_compress(item)))
+                self.assertEqual(item, decompress(_compress(item)))
 
         def test_json_zipunzip_chinese(self):
             item = {'hello': u"你好"}
-            self.assertEqual(item, json_decompress(json_compress(item)))
+            self.assertEqual(item, decompress(_compress(item)))
 
         def test_json_unzip_insist_failure(self):
             for item in self.items:
                 with self.assertRaises(RuntimeError):
-                    json_decompress(item, insist=True)
+                    decompress(item, insist=True)
 
         def test_json_unzip_noinsist_justified(self):
             for item in self.items:
-                self.assertEqual(item, json_decompress(item, insist=False))
+                self.assertEqual(item, decompress(item, insist=False))
 
         def test_json_unzip_noinsist_unjustified(self):
-            self.assertEqual(self.unzipped, json_decompress(self.zipped, insist=False))
+            self.assertEqual(self.unzipped, decompress(self.zipped, insist=False))
 
     unittest.main()
