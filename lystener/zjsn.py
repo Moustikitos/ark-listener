@@ -108,6 +108,8 @@ if __name__ == '__main__':
                 self.assertEqual(item, decompress(item, insist=False))
 
         def test_json_unzip_noinsist_unjustified(self):
-            self.assertEqual(self.unzipped, decompress(self.zipped, insist=False))
+            self.assertEqual(
+                self.unzipped, decompress(self.zipped, insist=False)
+            )
 
     unittest.main()

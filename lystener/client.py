@@ -5,9 +5,11 @@ import os
 import hashlib
 import getpass
 import binascii
+import pySecp256k1 as secp256k1
 
-from lystener import rest, secp256k1, getPublicIp
-from lystener.secp256k1 import ecdsa, schnorr
+from lystener import rest, getPublicIp
+from secp256k1 import ecdsa, schnorr
+
 
 PRIVKEY = None
 PUBLIC_IP = rest.GET.plain(
