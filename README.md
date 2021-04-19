@@ -116,12 +116,13 @@ There are two way for the plugin to be loaded :
   * when event is triggered, once execution finished plugin is cleaned from memory. A plugin can be updated without server restart
   * on server start. The plugin name have to be added to `startup.import` file.
 
-`plugin` dependencies are installed via `pip` using docstring as ini file format:
+`plugin` environement is defined using docstring as ini file format:
 
 ```python
 # -*- encoding:utf-8 -*-
 #  - elements listed in [requirements] will be installed with pip
 #  - elements listed in [dependencies] will be installed with apt-get
+#  - elements listed in [commands] are executed with /bin/bash
 
 """
 [requirements]
@@ -157,7 +158,6 @@ Requirements are checked, and installed if missing, on each startup from `./lys 
 
 Defaults can be changed using json-formated file `iot.param` stored in `lystener/.data` folder.
 
-You can listen [binance market](https://www.binance.com/en/trade/ARK_BTC) noise from webhook id [`55cd34c2-0e77-4b91-a0d8-48da6f2a8a64`](http://listen.arky-delegate.info) at `mqtt://listen.arky-delegate.info` on `ark/event` topic. 
 
 ### Python interface
 
@@ -193,7 +193,7 @@ def iot.publish(broker, topic, message, qos=1, venv=None):
 >>>
 ```
 
-## How can I check deployed listeners ?
+## How to check deployed listeners ?
 
 The listening server redirects browser to listener details page.
 
