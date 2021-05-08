@@ -21,9 +21,3 @@ Ark core webhooks trigger POST requests containing data to a targeted peer. This
 `ark-listener` uses python server app listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
 
 If found, `module.function` will be executed with data embeded in the POST request.
-
-## Install development version
-
-```bash
-bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
-```
