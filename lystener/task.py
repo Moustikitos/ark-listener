@@ -87,11 +87,6 @@ class Task(threading.Thread):
     STOP = threading.Event()
     LOCK = threading.Lock()
 
-    @staticmethod
-    def killall():
-        Task.LOCK.release()
-        Task.STOP.set()
-
     def __init__(self, *args, **kwargs):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -113,26 +108,33 @@ class MessageLogger(Task):
 class TaskChecker(Task):
 
     JOB = queue.Queue()
-    MODULES = set([])
     DB = None
 
     def run(self):
+        # sqlite db opened within thread
         TaskChecker.DB = initDB()
+        # run until Task.killall() called
         while not Task.STOP.is_set():
             skip = True
             # wait until a job is given
             module, name, data = TaskChecker.JOB.get()
             headers = data.get("headers", {})
             body = data.get("data", {})
-
             # get authorization from headers
-            auth = headers.get("Authorization", "?")
+            auth = headers.get("authorization", "")
+            # recreate the security token and check if authorized
             webhook = loadJson("%s.json" % auth)
-            half_token = webhook.get("token", 32*" ")[:32]
-
-            # check if authorized
-            if auth == "?" or half_token != auth:
+            token = auth + webhook.get("token", "")
+            if loadJson("token.json").get(
+                "%s.%s" % (module, name), False
+            ) != token:
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
+            # check sender IP
+            elif webhook.get("node-ip", "127.0.0.1") != headers.get(
+                "x-forward-for",
+                headers.get("remote-addr", "127.0.0.1")
+            ):
+                msg = "sender not genuine\n%s" % json.dumps(data, indent=2)
             else:
                 # build a signature
                 signature = body.get("signature", False)
@@ -140,20 +142,23 @@ class TaskChecker(Task):
                     signature = jsonHash(body)
                 signature = "%s.%s[%s]" % (module, name, signature)
 
+                # ATOMIC ACTION -----------------------------------------------
+                Task.LOCK.acquire()
                 # check if signature already in database
                 req = TaskChecker.DB.execute(
                     "SELECT count(*) FROM history WHERE signature = ?",
                     (signature,)
                 )
-
                 # exit if signature found in database
                 if req.fetchone()[0] != 0:
                     msg = "data already parsed"
-                elif signature not in TaskExecutioner.ONGOING:
+                elif signature in TaskExecutioner.ONGOING:
                     msg = "data is being parsed"
                 else:
                     TaskExecutioner.ONGOING.add(signature)
                     skip = False
+                Task.LOCK.release()
+                # END ATOMIC ACTION -------------------------------------------
 
             if not skip:
                 # import asked module
@@ -166,11 +171,12 @@ class TaskChecker(Task):
                     # try to get function by name
                     TaskExecutioner.MODULES.add(obj)
                     func = getattr(obj, name, False)
-                    if func:
+                    if callable(func):
                         TaskExecutioner.JOB.put([func, body, auth, signature])
+                        msg = "forwarded: " + signature
                     else:
-                        msg = "python definition %s not found in %s" % \
-                            (name, module)
+                        msg = "python definition %s not found in %s or is " \
+                              "not callable" % (name, module)
 
             # push msg
             MessageLogger.JOB.put(msg)
@@ -205,6 +211,7 @@ class TaskExecutioner(Task):
             # daemon waits here to log results, update database and clean
             # memory
             try:
+                # ATOMIC ACTION -----------------------------------------------
                 Task.LOCK.acquire()
 
                 if not error and response.get("success", False):
@@ -237,3 +244,11 @@ class TaskExecutioner(Task):
 
             finally:
                 Task.LOCK.release()
+                # END ATOMIC ACTION -------------------------------------------
+
+
+def killall():
+    Task.STOP.set()
+    MessageLogger.JOB.put("kill signal sent !")
+    TaskChecker.JOB.put(["", "", {}])
+    TaskExecutioner.JOB.put([lambda n: n, {"success": False}, "", ""])
