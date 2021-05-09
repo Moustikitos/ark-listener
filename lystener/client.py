@@ -24,7 +24,7 @@ def unlink():
     ECDSA = None
 
 
-def create_header(payload, schnorr=False, peer=None):
+def create_header(peer=None):
     global ECDSA
     salt = binascii.hexlify(os.urandom(32))
     salt = salt.decode("utf-8") if isinstance(salt, bytes) else salt
@@ -40,20 +40,17 @@ def create_header(payload, schnorr=False, peer=None):
 def secp256k1_filter(**kwargs):
     global ECDSA
     headers = kwargs.pop("headers", {"Content-type": "application/json"})
-    schnorr = kwargs.pop("schnorr", False)
-    to_jsonify = kwargs.pop("jsonify", None)
-
     peer = kwargs.get("peer", None)
     if ECDSA is not None:
-        if to_jsonify is not None:
-            headers.update(**create_header(to_jsonify, schnorr, peer))
-        else:
-            headers.update(**create_header(kwargs, schnorr, peer))
+        headers.update(**create_header(peer))
         kwargs["headers"] = headers
-
     return kwargs
 
 
+POST = rest.req.EndPoint(
+    method=lambda *a, **kw:
+        rest.req.EndPoint._call("POST", *a, **secp256k1_filter(**kw))
+)
 PUT = rest.req.EndPoint(
     method=lambda *a, **kw:
         rest.req.EndPoint._call("PUT", *a, **secp256k1_filter(**kw))
