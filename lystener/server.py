@@ -11,7 +11,7 @@ import lystener
 import traceback
 
 import cSecp256k1 as secp256k1
-from usrv import srv
+from usrv import srv, req
 from lystener import task
 
 DAEMONS = None
@@ -96,7 +96,7 @@ def checkSeed(value):
 
 
 @srv.bind("/authorized", methods=["PUT", "DELETE"])
-def checkPutDelete(**args):
+def checkRemoteAuth(**args):
     try:
         headers = args.get("headers", {})
         remote = headers.get(
@@ -111,7 +111,7 @@ def checkPutDelete(**args):
         # dict if no file found, the if condition acts same as if it was a list
         publicKey = headers.get("public-key", "?")
         if publicKey not in lystener.loadJson("auth"):
-            return {"success": False, "msg": "not authorized"}
+            return {"status": 401, "msg": "not authorized"}
         # Note that client has to define its own salt value and get a
         # 1-min-valid random seed from lystener server.
         # See /salt endpoint
@@ -119,12 +119,12 @@ def checkPutDelete(**args):
         puk = secp256k1.PublicKey.decode(publicKey)
         msg = secp256k1.hash_sha256(remote + headers["salt"] + getSeed())
         if not secp256k1._ecdsa.verify(msg, puk.x, puk.y, sig.r, sig.s):
-            return {"success": False, "msg": "bad signature"}
-        return {"success": True, "msg": "access granted"}
+            return {"status": 403, "msg": "bad signature"}
+        return {"status": 200, "msg": "access granted"}
 
     except Exception as error:
         return {
-            "success": False,
+            "status": 500,
             "msg": "checkPutDelete response: %s\n%s" %
             ("%r" % error, traceback.format_exc())
         }
@@ -193,13 +193,21 @@ def pin():
 @srv.bind("/<str:mod>/<str:func>", methods=["POST"])
 def catch(mod, func, **kwargs):
     "Create a new job and return simple message."
-    task.TaskChecker.JOB.put([mod, func, kwargs["data"]])
+    task.TaskChecker.JOB.put([mod, func, kwargs])
     return {
-        "msg": "webhook catched",
-        "module": mod,
-        "function": func,
-        "data": kwargs["data"]
+        "status": 200,
+        "msg": "task set: %s.%s(%s)" %
+        (mod, func, kwargs.get("data", {}))
     }
+
+
+# send POST request to create webhook #
+@srv.bind("/deploy", methods=["POST"])
+def deploy_listener(**kwargs):
+    chk = checkRemoteAuth(**kwargs)
+    if chk.get("status", 0) >= 299:
+        return chk
+    return req.POST.api.webhook(**kwargs.get("data", {}))
 
 
 # for test purpose only
