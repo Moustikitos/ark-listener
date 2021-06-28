@@ -77,7 +77,3 @@ def send(title, body):
             lystener.logMsg("notification response:\n%s" % response)
             if response.get("status", 1000) < 300:
                 return response
-
-
-# slack notification
-# https://api.slack.com/methods/chat.postMessage
