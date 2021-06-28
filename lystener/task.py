@@ -94,7 +94,6 @@ class Task(threading.Thread):
 
 
 class MessageLogger(Task):
-
     JOB = queue.Queue()
 
     def run(self):
@@ -105,8 +104,24 @@ class MessageLogger(Task):
             Task.LOCK.release()
 
 
-class TaskChecker(Task):
+class FunctionCaller(Task):
+    JOB = queue.Queue()
 
+    def run(self):
+        while not Task.STOP.is_set():
+            func, args, kwargs = FunctionCaller.JOB.get()
+            try:
+                response = func(*args, **kwargs)
+            except Exception as exception:
+                msg = "%s response:\n%s\n%s" % \
+                      (func, "%r" % exception, traceback.format_exc())
+            else:
+                msg = "%s response:\n%r" % (func, response)
+            # push msg
+            MessageLogger.JOB.put(msg)
+
+
+class TaskChecker(Task):
     JOB = queue.Queue()
     DB = None
 
@@ -125,7 +140,7 @@ class TaskChecker(Task):
             # recreate the security token and check if authorized
             webhook = loadJson("%s.json" % auth)
             token = auth + webhook.get("token", "")
-            if loadJson("token.json").get(
+            if loadJson("token").get(
                 "%s.%s" % (module, name), False
             ) != token:
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
@@ -183,7 +198,6 @@ class TaskChecker(Task):
 
 
 class TaskExecutioner(Task):
-
     JOB = queue.Queue()
     MODULES = set([])
     ONGOING = set([])
@@ -250,5 +264,6 @@ class TaskExecutioner(Task):
 def killall():
     Task.STOP.set()
     MessageLogger.JOB.put("kill signal sent !")
+    FunctionCaller.JOB.put([lambda n: n, {"Exit": True}, {}])
     TaskChecker.JOB.put(["", "", {}])
     TaskExecutioner.JOB.put([lambda n: n, {"success": False}, "", ""])
