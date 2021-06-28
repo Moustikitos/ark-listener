@@ -20,12 +20,15 @@ FILENAME = os.path.join(lystener.JSON, "salt")
 
 
 def deploy(host="0.0.0.0", port=5001):
+    """
+    Deploy listener server on ubuntu as system daemon.
+    """
     normpath = os.path.normpath
     executable = normpath(sys.executable)
 
     with io.open("./lys.service", "w") as unit:
         unit.write(u"""[Unit]
-Description=Lys web server
+Description=Lystener service
 After=network.target
 
 [Service]
@@ -61,6 +64,12 @@ WantedBy=multi-user.target
         os.system("sudo systemctl start lys")
 
 
+# seed service
+def startSeed():
+    dumpSeed()
+    task.setInterval(16)(dumpSeed)()
+
+
 def dumpSeed():
     if not os.path.exists(FILENAME) or (
         os.path.exists(FILENAME) and
@@ -71,11 +80,6 @@ def dumpSeed():
             {"salt": h.decode("utf-8") if isinstance(h, bytes) else h},
             "salt"
         )
-
-
-def startSeed():
-    dumpSeed()
-    task.setInterval(16)(dumpSeed)()
 
 
 def getSeed(pin=False):
@@ -141,7 +145,8 @@ class WebhookApp(srv.MicroJsonApp):
             DAEMONS = [
                 task.TaskChecker(),
                 task.TaskExecutioner(),
-                task.MessageLogger()
+                task.MessageLogger(),
+                task.FunctionCaller()
             ]
 
 
@@ -189,7 +194,7 @@ def pin():
     return getSeed(pin=True)
 
 
-# catch webhook data #
+# catch webhook data
 @srv.bind("/<str:mod>/<str:func>", methods=["POST"])
 def catch(mod, func, **kwargs):
     "Create a new job and return simple message."
@@ -201,13 +206,28 @@ def catch(mod, func, **kwargs):
     }
 
 
-# send POST request to create webhook #
+# send POST request to create a webhook
 @srv.bind("/deploy", methods=["POST"])
 def deploy_listener(**kwargs):
     chk = checkRemoteAuth(**kwargs)
     if chk.get("status", 0) >= 299:
         return chk
-    return req.POST.api.webhook(**kwargs.get("data", {}))
+    task.FunctionCaller.JOB.put(
+        [req.POST.api.webhooks, (), kwargs.get("data", {})]
+    )
+    return {"status": 200, "msg": "webhook POST request successfully posted"}
+
+
+# send PUT request to edit a webhook
+@srv.bind("/edit/<str:_id>", methods=["PUT"])
+def edit_listener(_id, **kwargs):
+    chk = checkRemoteAuth(**kwargs)
+    if chk.get("status", 0) >= 299:
+        return chk
+    task.FunctionCaller.JOB.put(
+        [req.PUT.api.webhooks, (_id, ), kwargs.get("data", {})]
+    )
+    return {"status": 200, "msg": "webhook PUT request successfully posted"}
 
 
 # for test purpose only
