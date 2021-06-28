@@ -7,13 +7,12 @@ import re
 import sys
 import ast
 import json
-import socket
 import datetime
 import traceback
 import configparser
 
 # save python familly
-PY3 = True if sys.version_info[0] >= 3 else False
+PY3 = sys.version_info[0] >= 3
 if PY3:
     input = input
 else:
@@ -97,21 +96,6 @@ def checkPluginDependencies():
                                 for cmd in cfg["commands"].keys():
                                     os.system('/bin/bash -c "%s"' % cmd)
                             logMsg("docstring exploited")
-
-
-def getPublicIp():
-    """Store the public ip of server in PUBLIC_IP global var"""
-    global PUBLIC_IP
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        PUBLIC_IP = s.getsockname()[0]
-    except Exception:
-        PUBLIC_IP = '127.0.0.1'
-    finally:
-        s.close()
-    return PUBLIC_IP
 
 
 def loadJson(name, folder=None):
