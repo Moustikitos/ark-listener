@@ -99,9 +99,14 @@ class MessageLogger(Task):
     def run(self):
         while not Task.STOP.is_set():
             msg = MessageLogger.JOB.get()
-            Task.LOCK.acquire()
-            logMsg(msg)
-            Task.LOCK.release()
+            try:
+                Task.LOCK.acquire()
+                logMsg(msg)
+            except Exception as exception:
+                msg = "log error:\n%r\n%s" % \
+                      (exception, traceback.format_exc())
+            finally:
+                Task.LOCK.release()
 
 
 class FunctionCaller(Task):
@@ -111,12 +116,15 @@ class FunctionCaller(Task):
         while not Task.STOP.is_set():
             func, args, kwargs = FunctionCaller.JOB.get()
             try:
+                Task.LOCK.acquire()
                 response = func(*args, **kwargs)
             except Exception as exception:
-                msg = "%s response:\n%s\n%s" % \
-                      (func, "%r" % exception, traceback.format_exc())
+                msg = "%s response:\n%r\n%s" % \
+                      (func, exception, traceback.format_exc())
             else:
                 msg = "%s response:\n%r" % (func, response)
+            finally:
+                Task.LOCK.release()
             # push msg
             MessageLogger.JOB.put(msg)
 
