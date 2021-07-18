@@ -109,13 +109,14 @@ def deploy_listener(args={}, **options):
 
     # parse request result if no error messages
     try:
-        if req.get("statusCode", 500) < 300:
+        if req.get("status", req.get("statusCode", 500)) < 300:
             headers = req.get("headers", {})
             webhook = req["data"]
+            security_token = webhook["token"]
             # manage token
             token_db = loadJson("token")
-            token_db[function] = webhook["token"]
-            webhook["token"] = webhook["token"][32:]
+            token_db[webhook["id"]] = security_token
+            webhook["token"] = security_token[32:]
             dumpJson(token_db, "token")
             # save the used peer to be able to delete it later
             webhook["peer"] = target_peer
@@ -124,7 +125,7 @@ def deploy_listener(args={}, **options):
                 headers.get("remote-addr", "127.0.0.1")
             )
             # save webhook configuration in JSON folder
-            dumpJson(webhook, webhook["token"][:32] + ".json")
+            dumpJson(webhook, security_token[:32] + ".json")
             logMsg("%s webhook set" % function)
         else:
             logMsg("%r" % req)
