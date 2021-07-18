@@ -25,6 +25,11 @@ def deploy(host="0.0.0.0", port=5001):
     """
     normpath = os.path.normpath
     executable = normpath(sys.executable)
+    gunicorn_conf = os.path.normpath(
+        os.path.abspath(
+            os.path.expanduser("~/ark-listener/gunicorn.conf.py")
+        )
+    )
 
     with io.open("./lys.service", "w") as unit:
         unit.write(u"""[Unit]
@@ -58,6 +63,7 @@ WantedBy=multi-user.target
             (executable, "" if lystener.PY3 else "==19.10.0")
         )
     os.system("chmod +x ./lys.service")
+    os.system("sudo cp %s %s" % (gunicorn_conf, normpath(sys.prefix)))
     os.system("sudo mv --force ./lys.service /etc/systemd/system")
     os.system("sudo systemctl daemon-reload")
     if not os.system("sudo systemctl restart lys"):
@@ -137,17 +143,10 @@ def checkRemoteAuth(**args):
 class WebhookApp(srv.MicroJsonApp):
 
     def __init__(self, host="127.0.0.1", port=5000, loglevel=20):
-        global DAEMONS, CURSOR
+        global CURSOR
         srv.MicroJsonApp.__init__(self, host, port, loglevel)
         if CURSOR is None:
             CURSOR = task.initDB()
-        if DAEMONS is None:
-            DAEMONS = [
-                task.TaskChecker(),
-                task.TaskExecutioner(),
-                task.MessageLogger(),
-                task.FunctionCaller()
-            ]
 
 
 # Bindings
@@ -174,12 +173,11 @@ def index():
     data = []
     for webhook in json_list:
         info = {}
-        info["counts"] = counts.get(webhook["token"][:32], 0)
+        info["counts"] = counts.get(webhook["token"], 0)
         info["id"] = webhook["id"]
         info["event"] = webhook["event"]
         info["call"] = ".".join(webhook["target"].split("/")[-2:])
         info["conditions"] = webhook["conditions"]
-        info["peer"] = webhook["peer"]
         data.append(info)
     return data
 
@@ -259,4 +257,12 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
     app = WebhookApp(options.host, options.port, loglevel=options.loglevel)
+
+    if DAEMONS is None:
+        DAEMONS = [
+            task.TaskChecker(),
+            task.TaskExecutioner(),
+            task.MessageLogger(),
+            task.FunctionCaller()
+        ]
     app.run(ssl=options.ssl)
