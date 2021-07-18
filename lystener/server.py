@@ -41,7 +41,7 @@ User=%(usr)s
 WorkingDirectory=%(wkd)s
 Environment=PYTHONPATH=%(path)s
 ExecStart=%(bin)s/gunicorn 'lystener.server:WebhookApp()' \
---bind=%(host)s:%(port)s --workers=5 --access-logfile -
+--bind=%(host)s:%(port)s --workers=2 --access-logfile -
 Restart=always
 
 [Install]
