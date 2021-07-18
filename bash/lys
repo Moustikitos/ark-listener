@@ -47,7 +47,7 @@ from lystener.client import deploy_listener
 
 def public_ip(args={}, **options):
     public_ip = rest.GET.plain(peer="https://www.ipecho.net").get(
-        "raw", lystener.getPublicIp()
+        "raw", rest.getPublicIp()
     )
     sys.stdout.write("%s\n" % public_ip)
     sys.stdout.flush()
@@ -133,6 +133,10 @@ def destroy_listener(args={}, **options):
             )
             # delete the webhook configuration
             os.remove(os.path.join(lystener.JSON, json_name))
+            # remove token from db
+            token_db = lystener.loadJson("token")
+            token_db.pop(webhook["id"], False)
+            lystener.dumpJson(token_db, "token")
             lystener.logMsg("%s webhook destroyed" % id_)
         else:
             lystener.logMsg("%s webhook not found" % id_)
