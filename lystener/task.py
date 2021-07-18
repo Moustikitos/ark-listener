@@ -148,9 +148,7 @@ class TaskChecker(Task):
             # recreate the security token and check if authorized
             webhook = loadJson("%s.json" % auth)
             token = auth + webhook.get("token", "")
-            if loadJson("token").get(
-                "%s.%s" % (module, name), False
-            ) != token:
+            if loadJson("token").get(webhook.get("id", ""), False) != token:
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
             # check sender IP
             elif webhook.get("node-ip", "127.0.0.1") != headers.get(
@@ -195,7 +193,9 @@ class TaskChecker(Task):
                     TaskExecutioner.MODULES.add(obj)
                     func = getattr(obj, name, False)
                     if callable(func):
-                        TaskExecutioner.JOB.put([func, body, auth, signature])
+                        TaskExecutioner.JOB.put(
+                            [func, body, webhook["token"], signature]
+                        )
                         msg = "forwarded: " + signature
                     else:
                         msg = "python definition %s not found in %s or is " \
