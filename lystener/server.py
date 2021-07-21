@@ -16,7 +16,7 @@ from lystener import task
 
 DAEMONS = None
 CURSOR = None
-FILENAME = os.path.join(lystener.JSON, "salt")
+SALT = os.path.join(lystener.JSON, "salt")
 
 
 def deploy(host="0.0.0.0", port=5001):
@@ -77,9 +77,9 @@ def startSeed():
 
 
 def dumpSeed():
-    if not os.path.exists(FILENAME) or (
-        os.path.exists(FILENAME) and
-        time.time() - os.path.getmtime(FILENAME) > 30
+    if not os.path.exists(SALT) or (
+        os.path.exists(SALT) and
+        time.time() - os.path.getmtime(SALT) > 30
     ):
         h = hashlib.sha256(binascii.hexlify(os.urandom(32))).hexdigest()
         lystener.dumpJson(
@@ -92,11 +92,11 @@ def getSeed(pin=False):
     try:
         value = lystener.loadJson("salt")["salt"]
     except KeyError:
-        if not os.path.exists(FILENAME):
+        if not os.path.exists(SALT):
             startSeed()
         value = lystener.loadJson("salt")["salt"]
     else:
-        if time.time() - os.path.getmtime(FILENAME) > 60:
+        if time.time() - os.path.getmtime(SALT) > 60:
             startSeed()
     return str(int(value, 16))[:6] if pin else value
 
@@ -197,6 +197,7 @@ def pin():
 def catch(mod, func, **kwargs):
     "Create a new job and return simple message."
     task.TaskChecker.JOB.put([mod, func, kwargs])
+    task.MessageLogger.log("%r" % kwargs)
     return {
         "status": 200,
         "msg": "task set: %s.%s(%s)" %
@@ -208,10 +209,10 @@ def catch(mod, func, **kwargs):
 @srv.bind("/deploy", methods=["POST"])
 def deploy_listener(**kwargs):
     chk = checkRemoteAuth(**kwargs)
-    if chk.get("status", 0) >= 299:
+    if chk.get("status", 0) >= 300:
         return chk
-    task.FunctionCaller.JOB.put(
-        [req.POST.api.webhooks, (), kwargs.get("data", {})]
+    task.FunctionCaller.call(
+        req.POST.api.webhooks, **kwargs.get("data", {})
     )
     return {"status": 200, "msg": "webhook POST request successfully posted"}
 
@@ -220,10 +221,10 @@ def deploy_listener(**kwargs):
 @srv.bind("/edit/<str:_id>", methods=["PUT"])
 def edit_listener(_id, **kwargs):
     chk = checkRemoteAuth(**kwargs)
-    if chk.get("status", 0) >= 299:
+    if chk.get("status", 0) >= 300:
         return chk
-    task.FunctionCaller.JOB.put(
-        [req.PUT.api.webhooks, (_id, ), kwargs.get("data", {})]
+    task.FunctionCaller.call(
+        req.PUT.api.webhooks, _id, **kwargs.get("data", {})
     )
     return {"status": 200, "msg": "webhook PUT request successfully posted"}
 
