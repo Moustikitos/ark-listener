@@ -108,6 +108,10 @@ class MessageLogger(Task):
             finally:
                 Task.LOCK.release()
 
+    @staticmethod
+    def log(msg):
+        MessageLogger.JOB.put(msg)
+
 
 class FunctionCaller(Task):
     JOB = queue.Queue()
@@ -127,6 +131,10 @@ class FunctionCaller(Task):
                 Task.LOCK.release()
             # push msg
             MessageLogger.JOB.put(msg)
+
+    @staticmethod
+    def call(func, *args, **kwargs):
+        FunctionCaller.JOB.put([func, args, kwargs])
 
 
 class TaskChecker(Task):
@@ -194,7 +202,10 @@ class TaskChecker(Task):
                     func = getattr(obj, name, False)
                     if callable(func):
                         TaskExecutioner.JOB.put(
-                            [func, body, webhook["token"], signature]
+                            [
+                                func, body.get("data", {}),
+                                webhook["token"], signature
+                            ]
                         )
                         msg = "forwarded: " + signature
                     else:
