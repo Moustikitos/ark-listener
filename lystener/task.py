@@ -4,16 +4,12 @@
 import os
 import sys
 import json
+import queue
 import sqlite3
 import hashlib
 import traceback
 import threading
 import importlib
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 from lystener import logMsg, loadJson, DATA
 
@@ -158,12 +154,6 @@ class TaskChecker(Task):
             token = auth + webhook.get("token", "")
             if loadJson("token").get(webhook.get("id", ""), False) != token:
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
-            # check sender IP
-            elif webhook.get("node-ip", "127.0.0.1") != headers.get(
-                "x-forward-for",
-                headers.get("remote-addr", "127.0.0.1")
-            ):
-                msg = "sender not genuine\n%s" % json.dumps(data, indent=2)
             else:
                 # build a signature
                 signature = body.get("signature", False)

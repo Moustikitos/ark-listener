@@ -11,8 +11,8 @@ import lystener
 import traceback
 
 import cSecp256k1 as secp256k1
-from usrv import srv, req
-from lystener import task
+from usrv import srv
+from lystener import task, rest
 
 DAEMONS = None
 CURSOR = None
@@ -109,10 +109,6 @@ def checkSeed(value):
 def checkRemoteAuth(**args):
     try:
         headers = args.get("headers", {})
-        remote = headers.get(
-            "x-forwarded-for",
-            headers.get("remote-addr", "127.0.0.1")
-        )
         task.MessageLogger.JOB.put(
             "received secured headers: %r" % headers
         )
@@ -127,7 +123,7 @@ def checkRemoteAuth(**args):
         # See /salt endpoint
         sig = secp256k1.HexSig.from_der(headers["signature"])
         puk = secp256k1.PublicKey.decode(publicKey)
-        msg = secp256k1.hash_sha256(remote + headers["salt"] + getSeed())
+        msg = secp256k1.hash_sha256(headers["salt"] + getSeed())
         if not secp256k1._ecdsa.verify(msg, puk.x, puk.y, sig.r, sig.s):
             return {"status": 403, "msg": "bad signature"}
         return {"status": 200, "msg": "access granted"}
@@ -212,7 +208,9 @@ def deploy_listener(**kwargs):
     if chk.get("status", 0) >= 300:
         return chk
     task.FunctionCaller.call(
-        req.POST.api.webhooks, **kwargs.get("data", {})
+        rest.POST.api.webhooks,
+        peer=rest.req.EndPoint.peer,
+        **kwargs.get("data", {})
     )
     return {"status": 200, "msg": "webhook POST request successfully posted"}
 
@@ -224,7 +222,9 @@ def edit_listener(_id, **kwargs):
     if chk.get("status", 0) >= 300:
         return chk
     task.FunctionCaller.call(
-        req.PUT.api.webhooks, _id, **kwargs.get("data", {})
+        rest.PUT.api.webhooks, _id,
+        peer=rest.req.EndPoint.peer,
+        **kwargs.get("data", {})
     )
     return {"status": 200, "msg": "webhook PUT request successfully posted"}
 

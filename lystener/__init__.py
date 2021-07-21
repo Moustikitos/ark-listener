@@ -13,10 +13,6 @@ import configparser
 
 # save python familly
 PY3 = sys.version_info[0] >= 3
-if PY3:
-    input = input
-else:
-    input = raw_input
 
 # configuration pathes
 ROOT = os.path.abspath(os.path.dirname(__file__))

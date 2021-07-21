@@ -149,7 +149,7 @@ def update_listener(args={}, **options):
             # update the webhook
             data = dict([
                 (k, v) for k, v in webhook.items()
-                if k not in ["id", "token", "peer", "node-ip"]
+                if k not in ["id", "token", "peer"]
             ], conditions=conditions)
             req = rest.PUT.api.webhooks(
                 webhook_id, peer=webhook["peer"], **data

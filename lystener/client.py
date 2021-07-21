@@ -25,7 +25,7 @@ def create_header(peer=None):
     global ECDSA
     salt = binascii.hexlify(os.urandom(32))
     salt = salt.decode("utf-8") if isinstance(salt, bytes) else salt
-    msg = rest.PUBLIC_IP + salt + rest.GET.salt(peer=peer).get("result", "?")
+    msg = salt + rest.GET.salt(peer=peer).get("result", "?")
     return {
         "Salt": salt,
         "Public-Key": ECDSA.puk().encode().decode("utf-8"),
@@ -120,10 +120,6 @@ def deploy_listener(args={}, **options):
             dumpJson(token_db, "token")
             # save the used peer to be able to delete it later
             webhook["peer"] = target_peer
-            webhook["node-ip"] = headers.get(
-                "x-forward-for",
-                headers.get("remote-addr", "127.0.0.1")
-            )
             # save webhook configuration in JSON folder
             dumpJson(webhook, security_token[:32] + ".json")
             logMsg("%s webhook set" % function)
