@@ -21,3 +21,35 @@ Ark core webhooks trigger POST requests containing data to a targeted peer. This
 `ark-listener` uses python server app listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
 
 If found, `module.function` will be executed with data embeded in the POST request.
+
+## Command line
+
+```
+Usage:
+   lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
+   lys update-listener <webhook-id> (<regexp> | (<field> <condition> <value>)...)
+   lys destroy-listener
+   lys show-listeners
+   lys start-listening [-p <port>]
+   lys restart-listeners
+   lys stop-listening
+   lys show-log
+   lys public-ip
+   lys grant <public-key>...
+
+Options:
+-w --webhook=<webhook> : the peer registering the webhook
+-p --port=<port>       : the port used for listening srv [default: 5001]
+
+Subcommands:
+   deploy-listener    : link a webhook <event> with a python <function>
+   update-listener    : change <event> trigger conditions
+   destroy-listener   : unlink webhook <event> from python <function>
+   lys show-listeners : print a sumary of listeners
+   start-listening    : start/restart listener server
+   restart-listeners  : restart listener server
+   stop-listening     : stop listener server
+   show-log           : show server log
+   public-ip          : get public ip
+   grant              : allow remote controle to <public-key> owner
+```
