@@ -17,8 +17,8 @@ Usage:
    lys grant <public-key>...
 
 Options:
--w --webhook=<webhook> : the peer registering the webhook
--p --port=<port>       : the port used for listening srv [default: 5001]
+-n --node=<node> : the node registering the webhook
+-p --port=<port> : the port used for listening srv [default: 5001]
 
 Subcommands:
    deploy-listener    : link a webhook <event> with a python <function>
@@ -154,12 +154,14 @@ def update_listener(args={}, **options):
             req = rest.PUT.api.webhooks(
                 webhook_id, peer=webhook["peer"], **data
             )
-            if req.get("success", False):
+            if req.get("status", 500) < 300:
                 webhook["conditions"] = conditions
                 dumpJson(webhook, filename)
-            logMsg("%r" % req)
+                logMsg("webhook %s updated" % webhook_id)
+            else:
+                logMsg("webhook %s not updated:\n%r" % (webhook_id, req))
         else:
-            lystener.logMsg("%s webhook not found" % webhook_id)
+            lystener.logMsg("webhook %s not found" % webhook_id)
     except Exception as error:
         lystener.logMsg("%s" % webhook)
         lystener.logMsg("%r\n%s" % (error, traceback.format_exc()))
@@ -198,7 +200,10 @@ def destroy_listener(args={}, **options):
             token_db = lystener.loadJson("token")
             token_db.pop(webhook["id"], False)
             lystener.dumpJson(token_db, "token")
-            lystener.logMsg("%s webhook destroyed:\n%s" % (id_, req))
+            if req.get("status", 500) < 300:
+                lystener.logMsg("%s webhook destroyed" % id_)
+            else:
+                lystener.logMsg("%s webhook not destroyed:\n%r" % (id_, req))
         else:
             lystener.logMsg("%s webhook not found" % id_)
     except Exception as error:
@@ -213,7 +218,9 @@ def show_listeners(args={}, **options):
         data["conditions"] = ",".join(
             [" ".join(d.values()) for d in data["conditions"]]
         )
-        lystener.logMsg("%(id)s: %(target)s|%(conditions)s|{%(peer)s}" % data)
+        lystener.logMsg(
+            "%(id)s:\n    %(target)s|%(conditions)s|{%(peer)s}" % data
+        )
 
 
 # command line execution
@@ -221,12 +228,6 @@ def show_listeners(args={}, **options):
 if __name__ == "__main__":
 
     FILTER = {
-        "--multiple": lambda value: value,
-        "--condition": lambda value: value,
-        "--field": lambda value: value,
-        "--value": lambda value: value,
-        "--webhook": lambda value: value,
-        "--port": lambda value: value,
         "<regexp>": lambda value: getattr(value, "pattern", value)
     }
 
