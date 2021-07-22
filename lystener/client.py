@@ -97,7 +97,7 @@ def deploy_listener(args={}, **options):
         link()
     else:
         _POST = rest.POST
-        target_peer = options.get("webhook", rest.req.EndPoint.peer)
+        target_peer = options.get("node", rest.req.EndPoint.peer)
 
     # create the webhook
     req = _POST.api.webhooks(
@@ -110,7 +110,6 @@ def deploy_listener(args={}, **options):
     # parse request result if no error messages
     try:
         if req.get("status", req.get("statusCode", 500)) < 300:
-            headers = req.get("headers", {})
             webhook = req["data"]
             security_token = webhook["token"]
             # manage token
@@ -124,8 +123,7 @@ def deploy_listener(args={}, **options):
             dumpJson(webhook, security_token[:32] + ".json")
             logMsg("%s webhook set" % function)
         else:
-            logMsg("%r" % req)
-            logMsg("%s webhook not set" % function)
+            logMsg("%s webhook not set:\n%r" % (function, req))
     except Exception as error:
         logMsg("%s" % req)
         logMsg("%r\n%s" % (error, traceback.format_exc()))

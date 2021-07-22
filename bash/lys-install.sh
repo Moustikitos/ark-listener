@@ -72,11 +72,11 @@ cd ~/ark-listener
 pip install -r requirements.txt -q
 echo "done"
 
-chmod +x bash/activate
-
 cp bash/lys ~
+cp bash/activate ~/lys-venv
 cd ~
 chmod +x lys
+chmod +x lys-venv
 
 echo
 echo "setup finished"

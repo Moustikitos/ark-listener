@@ -4,7 +4,7 @@
 """
 Usage:
    lys deploy-listener <event> <function> (<regexp> | (<field> <condition> \
-<value>)...) [-w <webhook>]
+<value>)...) [-n <node>]
    lys update-listener <webhook-id> (<regexp> | (<field> <condition> \
 <value>)...)
    lys destroy-listener
