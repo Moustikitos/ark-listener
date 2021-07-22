@@ -147,6 +147,7 @@ class TaskChecker(Task):
             module, name, data = TaskChecker.JOB.get()
             headers = data.get("headers", {})
             body = data.get("data", {})
+            content = body.get("data", {})
             # get authorization from headers
             auth = headers.get("authorization", "")
             # recreate the security token and check if authorized
@@ -156,11 +157,7 @@ class TaskChecker(Task):
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
             else:
                 # build a signature
-                signature = body.get("signature", False)
-                if not signature:
-                    signature = jsonHash(body)
-                signature = "%s.%s[%s]" % (module, name, signature)
-
+                signature = "%s.%s[%s]" % (module, name, jsonHash(content))
                 # ATOMIC ACTION -----------------------------------------------
                 Task.LOCK.acquire()
                 # check if signature already in database
@@ -178,7 +175,6 @@ class TaskChecker(Task):
                     skip = False
                 Task.LOCK.release()
                 # END ATOMIC ACTION -------------------------------------------
-
             if not skip:
                 # import asked module
                 try:
@@ -192,16 +188,12 @@ class TaskChecker(Task):
                     func = getattr(obj, name, False)
                     if callable(func):
                         TaskExecutioner.JOB.put(
-                            [
-                                func, body.get("data", {}),
-                                webhook["token"], signature
-                            ]
+                            [func, content, webhook["token"], signature]
                         )
                         msg = "forwarded: " + signature
                     else:
                         msg = "python definition %s not found in %s or is " \
                               "not callable" % (name, module)
-
             # push msg
             MessageLogger.JOB.put(msg)
 
