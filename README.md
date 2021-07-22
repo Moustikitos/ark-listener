@@ -38,12 +38,14 @@ Here an example of script (`module.py`):
 [requirements]
 pytz
 [dependencies]
-...
+python3
 [commands]
-...
+echo "Simple script ready !"
 """
 
-from lystener import task
+import sys
+import pytz
+from datetime import datetime as time
 
 
 def function(data):
@@ -51,7 +53,10 @@ def function(data):
    # Script have to return ditctionary containing at least "success" key:
    #    {"success": True, ...} : execution will be stored in database
    #    {"success": False, ...} : execution will not be stored in database
-   task.MessageLogger.log("%r" % data)
+   sys.stdout.write(
+      "%s: %r" % (pytz.timezone('US/Eastern').localize(time.now()), data)
+   )
+   sys.stdout.flush()
    return {"success": True}
 ```
 
