@@ -2,17 +2,17 @@
 ```mermaid
 flowchart LR
     U(Listener owner)
-    L{Node}
+    L{Lys<br/>app}
     l_api[listener<br/>endpoint]
     ark{Blockchain<br/>node}
-    plg1([plugin])
+    plg1([python<br/>script])
     whk>webhook]
     BC{Blockchain<br/>node}
     t_api[blockchain<br/>api]
 
     U -..->|remote control| L
 
-    ark <-.->|webhook<br/>subscription| L
+    ark <-.->|webhook<br/>subscription<br/>MGMT| L
     subgraph Ark ecosystem
         ark === whk
     end
@@ -21,13 +21,13 @@ flowchart LR
         t_api === BC
     end
 
-    subgraph Listener
+    subgraph Listener Node
         l_api --> plg1
-        L ==> plg1
+        L
     end
 
     whk -.->|data| l_api
-    plg1 -.->|call| t_api
+    plg1 -.->|HTTP request| t_api
 ```
 
 ## Usecases
