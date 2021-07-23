@@ -157,7 +157,8 @@ class TaskChecker(Task):
                 msg = "not authorized here\n%s" % json.dumps(data, indent=2)
             else:
                 # build a signature
-                signature = "%s.%s[%s]" % (module, name, jsonHash(content))
+                signature = "%s@%s.%s[%s]" % (
+                    webhook["event"], module, name, jsonHash(content))
                 # ATOMIC ACTION -----------------------------------------------
                 Task.LOCK.acquire()
                 # check if signature already in database
