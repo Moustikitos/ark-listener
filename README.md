@@ -148,7 +148,7 @@ cd ~
 (venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -n http://dpos.arky-delegate.info:4004
 ```
 
-**watchdog script**
+**Watchdog script**
 
 `watchdog.py` script is available. It needs `.data/notifyWhaleMove.param` configuration file identifying specific wallets:
 
@@ -185,45 +185,37 @@ from lystener import notify
 notify.send("Title", "Message body...")
 ```
 
-4 notification types are available. Notification service is activated if a json configuration file is present in `.data` folder.
+Notification service is activated if a json configuration file is present in `.data` folder.
 
-**freemobile (french only)**
+ 1. **freemobile (french only)**: Notification option must be enabled in your Free mobile account. Then, copy your parameters in `freemobile.json` file:
+    ```json
+    {
+        "user": "12345678", 
+        "pass": "..."
+    }
+    ```
 
-Notification option must be enabled in your Free mobile account. Then, copy your parameters in `freemobile.json` file:
-```json
-{
-    "user": "12345678", 
-    "pass": "..."
-}
-```
+ 2. **twilio**: Copy your parameters in `twilio.json` file:
+    ```json
+    {
+        "sid": "...",
+        "auth": "...", 
+        "receiver": "+1234567890", 
+        "sender": "+0987654321"
+    }
+    ```
 
-**twilio**
+ 3. **Pushover**: Copy your parameters in `pushover.json` file:
+    ```json
+    {
+        "user": "...",
+        "token": "..."
+    }
+    ```
 
-Copy your parameters in `twilio.json` file:
-```json
-{
-    "sid": "...",
-    "auth": "...", 
-    "receiver": "+1234567890", 
-    "sender": "+0987654321"
-}
-```
-
-**Pushover**
-
-Copy your parameters in `pushover.json` file:
-```json
-{
-    "user": "...",
-    "token": "..."
-}
-```
-
-**Pushbullet**
-
-Copy your API token in `pushbullet.json` file:
-```json
-{
-    "token": "..."
-}
-```
+ 4. **Pushbullet**: Copy your API token in `pushbullet.json` file:
+    ```json
+    {
+        "token": "..."
+    }
+    ```
