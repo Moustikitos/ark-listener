@@ -21,16 +21,16 @@ Options:
 -p --port=<port> : the port used for listening srv [default: 5001]
 
 Subcommands:
-   deploy-listener    : link a webhook <event> with a python <function>
-   update-listener    : change <event> trigger conditions
-   destroy-listener   : unlink webhook <event> from python <function>
-   lys show-listeners : print a sumary of registered <event>
-   start-listening    : start/restart listener server
-   restart-listeners  : restart listener server
-   stop-listening     : stop listener server
-   show-log           : show server log
-   public-ip          : get public ip
-   grant              : allow remote controle to <public-key> owner
+   deploy-listener   : link a webhook <event> with a python <function>
+   update-listener   : change <event> trigger conditions
+   destroy-listener  : unlink webhook <event> from python <function>
+   show-listeners    : print a sumary of registered <event>
+   start-listening   : start/restart listener server
+   restart-listeners : restart listener server
+   stop-listening    : stop listener server
+   show-log          : show server log
+   public-ip         : get public ip
+   grant             : allow remote controle to <public-key> owner
 """
 
 import os
