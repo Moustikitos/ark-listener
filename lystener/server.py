@@ -215,6 +215,20 @@ def deploy_listener(**kwargs):
     return {"status": 200, "msg": "webhook POST request successfully posted"}
 
 
+# send DELETE request to edit a webhook
+@srv.bind("/destroy/<str:_id>", methods=["DELETE"])
+def edit_listener(_id, **kwargs):
+    chk = checkRemoteAuth(**kwargs)
+    if chk.get("status", 0) >= 300:
+        return chk
+    task.FunctionCaller.call(
+        rest.DELETE.api.webhooks, _id,
+        peer=rest.req.EndPoint.peer,
+        **kwargs.get("data", {})
+    )
+    return {"status": 200, "msg": "webhook DELETE request successfully posted"}
+
+
 # send PUT request to edit a webhook
 @srv.bind("/edit/<str:_id>", methods=["PUT"])
 def edit_listener(_id, **kwargs):
