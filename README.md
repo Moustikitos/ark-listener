@@ -16,7 +16,7 @@
 
 ## Concept
 
-**centralized execution service**
+*centralized execution service*
 
 [![](https://mermaid.ink/img/eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG4gICAgVShMaXN0ZW5lciBvd25lcilcbiAgICBMe0x5czxici8-YXBwfVxuICAgIGxfYXBpW2xpc3RlbmVyPGJyLz5lbmRwb2ludF1cbiAgICBhcmt7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICBwbGcxKFtweXRob248YnIvPnNjcmlwdF0pXG4gICAgd2hrPndlYmhvb2tdXG4gICAgQkN7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICB0X2FwaVtibG9ja2NoYWluPGJyLz5hcGldXG5cbiAgICBVIC0uLi0-fHJlbW90ZSBjb250cm9sfCBMXG5cbiAgICBhcmsgPC0uLT58d2ViaG9vazxici8-c3Vic2NyaXB0aW9uPGJyLz5NR01UfCBMXG4gICAgc3ViZ3JhcGggQXJrIGVjb3N5c3RlbVxuICAgICAgICBhcmsgPT09IHdoa1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggVGFyZ2V0ZWQgZWNvc3lzdGVtXG4gICAgICAgIHRfYXBpID09PSBCQ1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggTGlzdGVuZXIgTm9kZVxuICAgICAgICBsX2FwaSAtLT4gcGxnMVxuICAgICAgICBMXG4gICAgZW5kXG5cbiAgICB3aGsgLS4tPnxkYXRhfCBsX2FwaVxuICAgIHBsZzEgLS4tPnxIVFRQIHJlcXVlc3R8IHRfYXBpXG4iLCJtZXJtYWlkIjp7InRoZW1lIjoibmV1dHJhbCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlLCJhdXRvU3luYyI6dHJ1ZSwidXBkYXRlRGlhZ3JhbSI6ZmFsc2V9)](https://mermaid-js.github.io/mermaid-live-editor/edit##eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG4gICAgVShMaXN0ZW5lciBvd25lcilcbiAgICBMe0x5czxici8-YXBwfVxuICAgIGxfYXBpW2xpc3RlbmVyPGJyLz5lbmRwb2ludF1cbiAgICBhcmt7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICBwbGcxKFtweXRob248YnIvPnNjcmlwdF0pXG4gICAgd2hrPndlYmhvb2tdXG4gICAgQkN7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICB0X2FwaVtibG9ja2NoYWluPGJyLz5hcGldXG5cbiAgICBVIC0uLi0-fHJlbW90ZSBjb250cm9sfCBMXG5cbiAgICBhcmsgPC0uLT58d2ViaG9vazxici8-c3Vic2NyaXB0aW9uPGJyLz5NR01UfCBMXG4gICAgc3ViZ3JhcGggQXJrIGVjb3N5c3RlbVxuICAgICAgICBhcmsgPT09IHdoa1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggVGFyZ2V0ZWQgZWNvc3lzdGVtXG4gICAgICAgIHRfYXBpID09PSBCQ1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggTGlzdGVuZXIgTm9kZVxuICAgICAgICBsX2FwaSAtLT4gcGxnMVxuICAgICAgICBMXG4gICAgZW5kXG5cbiAgICB3aGsgLS4tPnxkYXRhfCBsX2FwaVxuICAgIHBsZzEgLS4tPnxIVFRQIHJlcXVlc3R8IHRfYXBpXG4iLCJtZXJtYWlkIjoie1xuICBcInRoZW1lXCI6IFwibmV1dHJhbFwiXG59IiwidXBkYXRlRWRpdG9yIjp0cnVlLCJhdXRvU3luYyI6dHJ1ZSwidXBkYXRlRGlhZ3JhbSI6ZmFsc2V9)
 
@@ -117,7 +117,7 @@ Subcommands:
 
 ### Examples
 
-*Deploying listener*
+**Deploying listener**
 
 Execute `dummy.logSomething` on `transaction.applied` event:
 ```bash
@@ -133,7 +133,7 @@ cd ~
 (venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -n http://dpos.arky-delegate.info:4004
 ```
 
-*Available script*
+**watchdog script**
 
 `watchdog.py` script is available. It needs `.data/notifyWhaleMove.param` configuration file identifying specific wallets:
 
@@ -166,7 +166,7 @@ cd ~
 
 4 notification types are available. Notification service is activated if a json configuration file is present in `.data` folder.
 
-*freemobile (french only)*
+**freemobile (french only)**
 
 Notification option must be enabled in your Free mobile account. Then, copy your parameters in `freemobile.json` file:
 ```json
@@ -176,7 +176,7 @@ Notification option must be enabled in your Free mobile account. Then, copy your
 }
 ```
 
-*twilio*
+**twilio**
 
 Copy your parameters in `twilio.json` file:
 ```json
@@ -188,7 +188,7 @@ Copy your parameters in `twilio.json` file:
 }
 ```
 
-*Pushover*
+**Pushover**
 
 Copy your parameters in `pushover.json` file:
 ```json
@@ -198,7 +198,7 @@ Copy your parameters in `pushover.json` file:
 }
 ```
 
-*Pushbullet*
+**Pushbullet**
 
 Copy your API token in `pushbullet.json` file:
 ```json
