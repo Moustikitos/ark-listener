@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # © THOORENS Bruno
 
+import socket
 import lystener
 
 from usrv import req
@@ -11,8 +12,29 @@ POST = req.POST
 PUT = req.PUT
 DELETE = req.DELETE
 
+
+def getPublicIp():
+    """Store the public ip of server in PUBLIC_IP global var"""
+    global PUBLIC_IP
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        PUBLIC_IP = s.getsockname()[0]
+    except Exception:
+        PUBLIC_IP = '127.0.0.1'
+    finally:
+        s.close()
+    return PUBLIC_IP
+
+
+PUBLIC_IP = GET.plain(
+    peer="https://www.ipecho.net"
+).get("raw", getPublicIp())
+
+
 # default peer configuration
-LISTENER_PEER = {"scheme": "http", "ip": lystener.getPublicIp(), "port": 5001}
+LISTENER_PEER = {"scheme": "http", "ip": PUBLIC_IP, "port": 5001}
 WEBHOOK_PEER = {"scheme": "http", "ip": "127.0.0.1", "port": 4004}
 
 # generate defaults peers

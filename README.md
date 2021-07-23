@@ -12,220 +12,197 @@
 ## Supported blockchain
 
   * [X] Ark-v2
+  * [ ] Ark-v3
 
 ## Concept
 
-Ark core webhooks trigger POST requests containing data to a targeted peer. This one then have to parse data and trigger code execution.
+*centralized execution service*
 
-`ark-listener` uses python server app listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`.
+[![](https://mermaid.ink/img/eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG4gICAgVShMaXN0ZW5lciBvd25lcilcbiAgICBMe0x5czxici8-YXBwfVxuICAgIGxfYXBpW0xpc3RlbmVyPGJyLz5lbmRwb2ludF1cbiAgICBhcmt7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICBwbGcxKFtQeXRob248YnIvPnNjcmlwdF0pXG4gICAgd2hrPldlYmhvb2tdXG4gICAgQkN7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICB0X2FwaVtCbG9ja2NoYWluPGJyLz5BUEldXG5cbiAgICBVIC0uLi0-fHJlbW90ZSBjb250cm9sfCBMXG5cbiAgICBhcmsgPC0uLT58d2ViaG9vazxici8-c3Vic2NyaXB0aW9uPGJyLz5NR01UfCBMXG4gICAgc3ViZ3JhcGggQXJrIGVjb3N5c3RlbVxuICAgICAgICBhcmsgPT09IHdoa1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggVGFyZ2V0ZWQgZWNvc3lzdGVtXG4gICAgICAgIHRfYXBpID09PSBCQ1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggTGlzdGVuZXIgTm9kZVxuICAgICAgICBsX2FwaSAtLT4gcGxnMVxuICAgICAgICBMXG4gICAgZW5kXG5cbiAgICB3aGsgLS4tPnxkYXRhfCBsX2FwaVxuICAgIHBsZzEgLS4tPnxSZXF1ZXN0fCB0X2FwaVxuIiwibWVybWFpZCI6eyJ0aGVtZSI6Im5ldXRyYWwifSwidXBkYXRlRWRpdG9yIjpmYWxzZSwiYXV0b1N5bmMiOnRydWUsInVwZGF0ZURpYWdyYW0iOmZhbHNlfQ)](https://mermaid-js.github.io/mermaid-live-editor/edit/##eyJjb2RlIjoiZmxvd2NoYXJ0IExSXG4gICAgVShMaXN0ZW5lciBvd25lcilcbiAgICBMe0x5czxici8-YXBwfVxuICAgIGxfYXBpW0xpc3RlbmVyPGJyLz5lbmRwb2ludF1cbiAgICBhcmt7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICBwbGcxKFtQeXRob248YnIvPnNjcmlwdF0pXG4gICAgd2hrPldlYmhvb2tdXG4gICAgQkN7QmxvY2tjaGFpbjxici8-bm9kZX1cbiAgICB0X2FwaVtCbG9ja2NoYWluPGJyLz5BUEldXG5cbiAgICBVIC0uLi0-fHJlbW90ZSBjb250cm9sfCBMXG5cbiAgICBhcmsgPC0uLT58d2ViaG9vazxici8-c3Vic2NyaXB0aW9uPGJyLz5NR01UfCBMXG4gICAgc3ViZ3JhcGggQXJrIGVjb3N5c3RlbVxuICAgICAgICBhcmsgPT09IHdoa1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggVGFyZ2V0ZWQgZWNvc3lzdGVtXG4gICAgICAgIHRfYXBpID09PSBCQ1xuICAgIGVuZFxuXG4gICAgc3ViZ3JhcGggTGlzdGVuZXIgTm9kZVxuICAgICAgICBsX2FwaSAtLT4gcGxnMVxuICAgICAgICBMXG4gICAgZW5kXG5cbiAgICB3aGsgLS4tPnxkYXRhfCBsX2FwaVxuICAgIHBsZzEgLS4tPnxlcXVlc3R8IHRfYXBpXG4iLCJtZXJtYWlkIjoie1xuICBcInRoZW1lXCI6IFwibmV1dHJhbFwiXG59IiwidXBkYXRlRWRpdG9yIjpmYWxzZSwiYXV0b1N5bmMiOnRydWUsInVwZGF0ZURpYWdyYW0iOmZhbHNlfQ)
 
+Ark core webhooks trigger POST requests containing blockchain data to a targeted peer. This one then have to parse data and trigger code execution. `ark-listener` uses lite python json server listening every POST requests received with the pattern : `http://{ip}:{port}/module/function`. 
 If found, `module.function` will be executed with data embeded in the POST request.
 
-## Install development version
+### Python script triggered
 
-```bash
-bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
-```
+Any peace of python code found in `lystener.__path__` can be triggered. 
+`lystener` package provides a `plugins` folder where custom code to execute can be stored. If another place is needed, simply add the path to the `package.pth` file.
 
-### Deploy listener
+Python script environnement can be set using docstring. Requirements are checked and installed if missing with `./lys start-listening` or `./lys restart-listeners` commands.
 
-Execute `dummy.logSomething` on `transaction.applied` event :
-
-```bash
-cd ~
-ark-listener/bash/activate
-# if vendorField starts with `sc:`
-# using default webhook peer (http://127.0.0.1:4004)
-./lys deploy-listener transaction.applied dummy.logSomething ^sc:.*$
-# or
-./lys deploy-listener transaction.applied dummy.logSomething vendorField regexp ^sc:.*$
-
-# if amount >= 25 arks
-# using a custom webhook peer
-./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 -w http://dpos.arky-delegate.info:4004
-
-# if amount >= 25 arks or vendorField starting with `sc:`
-# using a custom webhook peer
-./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -w http://dpos.arky-delegate.info:4004
-```
-
-### Remote deployment
-
-`lystener` also allows remote deployement using `secp256k1` cryptographic security. The autorized public keys have to be stored in `auth` file as json format in `.json` folder (use `./lys grant`). See below a valid `auth` file :
-
-```json
-[
-  "030da05984d579395ce276c0dd6ca0a60140a3c3d964423a04e7abe110d60a15e9",
-  "02c232b067bf2eda5163c2e187c1b206a9f876d8767a0f1a3f6c1718541af3bd4d"
-]
-```
-
-Associated private keys are then granted to send PUT and DELETE calls to listener server using `client` module. The private key is never broadcasted.
-
+Here is an example of script (`module.py`):
 ```python
->>> from lystener import client, rest
->>> # connection to listener is mandatory for security check
->>> rest.connect("http://{ip_0}:{port_0}")
->>> client.link()
-... Type or paste your secret>
->>> # once private key generated, security headers are used to sent PUT or
->>> # DELETE call (add or remove listener remotly), emitter is the blockchain
->>> # node sending the webhook, it is not mandatory if listener is installed 
->>> # on blockchain node. Listener server public ip will be used if no
->>> # receiver is defined.
->>>
->>> # /listener/deploy endpoint
->>> client.PUT.listener.deploy(
-...    function="dummy.logSomething",
-...    event="block.forged",
-...    conditions=[("totalFee", "gte", 100000000)],
-...    emitter="http://{ip_2}{port_2}",  # blockchain node {ip}:{port}
-...    receiver="http://{ip_1}:{port_1}",  # listener {ip}:{port} listening 
-... )
->>> # /listener/destroy endpoint
->>> client.DELETE.listener.destroy(
-...    id="fa67d0c3-4d88-4038-9818-573d9beac84b",
-... )
-```
+# -*- coding:utf-8 -*-
 
-If `client` module not to be used, HTTP request must provide elements below in the headers :
-
-```raw
-Public-key: <secp256k1-public-key>
-Signature: <[der-stringder]|64-length-hex-string>
-Method: <[ecdsa]|schnorr>
-Salt: <hex-string>
-```
-
-Signature is issued on concatenation of client public-ip with a random `Salt` string (provided in the header) and another one from listener `/salt` endpoint. If `Method` omitted, `ecdsa` signature check is used.
-
-## Launch listener
-
-```bash
-~/ark-listener/bash/activate
-~/lys start-listening
-```
-
-Listener server ip have to be white-listed on blockchain relay. Execute `./lys public-ip` to find ip address.
-
-## Where is stored code to execute ?
-
-The ark-listener tree contains a `plugins` folder where you can save your custom code to execute. If another place is needed, simply add the path to the `package.pth` file and `lystener` will be able to find it.
-
-There are two way for the plugin to be loaded :
-  * when event is triggered, once execution finished plugin is cleaned from memory. A plugin can be updated without server restart
-  * on server start. The plugin name have to be added to `startup.import` file.
-
-`plugin` environement is defined using docstring as ini file format:
-
-```python
-# -*- encoding:utf-8 -*-
+# python script environnement:
 #  - elements listed in [requirements] will be installed with pip
 #  - elements listed in [dependencies] will be installed with apt-get
-#  - elements listed in [commands] are executed with /bin/bash
-
+#  - elements listed in [commands] will be executed with /bin/bash
 """
 [requirements]
-git+https://github.com/Moustikitos/dpos#egg=dposlib
-configparser
-
+pytz
 [dependencies]
-curl
+python3
+[commands]
+echo "Simple script ready !"
 """
 
-from dposlib import rest
-[...]
+import sys
+import pytz
+from datetime import datetime as time
+
+
+def function(data):
+   # data is the blockchain content sent via webhook.
+   # Script have to return ditctionary containing at least "success" key:
+   #    {"success": True, ...} : execution will be stored in database
+   #    {"success": False, ...} : execution will not be stored in database
+   sys.stdout.write(
+      "%s: %r" % (pytz.timezone('US/Eastern').localize(time.now()), data)
+   )
+   sys.stdout.flush()
+   return {"success": True}
 ```
 
-Requirements are checked, and installed if missing, on each startup from `./lys start-listening` command.
-
-## IOT bridge plugin
-
-`lystener` bundles `iot` plugin which transforms node into a mqtt broker using `mosquitto`.
-
-### Function `iot.forward`
-
-`iot` plugin provides a simple `forward` definition to send webhook data from blockchain to a specific topic. default configuration is :
-
-```json
-{
-  "venv": "~/.local/share/ark-listener/venv/bin",
-  "broker": "mqtt://127.0.0.1",
-  "topic": "ark/event",
-  "qos": 1
-}
-```
-
-Defaults can be changed using json-formated file `iot.param` stored in `lystener/.data` folder.
-
-
-### Python interface
-
-`iot` plugins also provides a python definition, used by `iot.forward`, that allow custom mqtt publication.
-
-```python
-def iot.publish(broker, topic, message, qos=1, venv=None):
-    """
-    Send message on a topic using a specific broker. This function calls
-    hbmqtt_pub command in a python subprocess where a virtualenv folder can be
-    specified if needed (folder where `activate` script is localized).
-
-    Args:
-        broker (:class:`str`): valid borker url (ie mqtt://127.0.0.1)
-        topic (:class:`str`): topic to use
-        message (:class:`str`): message to send
-        qos (:class:`int`): quality of service [default: 2]
-        venv (:class:`str`): virtualenv folder [default: None]
-    Returns:
-        :class:`str`: subprocess stdout and stderr
-    """
-```
-
-`iot` plugin is available  directly from lystener `package`.
-
-```python
->>> from lystener import iot
->>> iot.publish(
-...    "mqtt://listen.arky-delegate.info",
-...    "ark/event", "Simple message",
-...    venv="~/.local/share/ark-listener/venv/bin")
-('', "[2020-04-16 20:54:40,376] :: INFO - hbmqtt_pub/2242-raspberry Connecting to broker\n[2020-04-16 20:54:40,497] :: INFO - Exited state new\n[2020-04-16 20:54:40,498] :: INFO - Entered state connected\n[2020-04-16 20:54:40,498] :: INFO - hbmqtt_pub/2242-raspberry Publishing to 'ark/event'\n[2020-04-16 20:54:40,539] :: INFO - Exited state connected\n[2020-04-16 20:54:40,539] :: INFO - Entered state disconnected\n[2020-04-16 20:54:40,540] :: INFO - hbmqtt_pub/2242-raspberry Disconnected from broker\n")
->>>
-```
-
-## How to check deployed listeners ?
-
-The listening server redirects browser to listener details page.
-
-## `lys` commands
-
-```bash
-~/ark-listener/bash/activate
-~/lys --help
-```
+## Install
 
 ```
+~$ bash <(curl -s https://raw.githubusercontent.com/Moustikitos/ark-listener/master/bash/lys-install.sh)
+```
+
+Install script will copy two scripts in home folder: `lys-venv` and `lys`. 
+Listener server ip have to be white-listed by blockchain node (see `./lys public-ip`).
+
+## Use
+
+First read [`ARK doc`](https://ark.dev/docs/api/webhook-api/endpoints) about webhook endpoints.
+
+Activate `lys` virtual environnement:
+```
+~$ ./lys-venv
+(venv) ~$
+```
+
+Use `lys` command:
+```
+(venv) ~$ ./lys --help
 Usage:
-   lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-w <webhook>]
+   lys deploy-listener <event> <function> (<regexp> | (<field> <condition> <value>)...) [-n <node>]
+   lys update-listener <webhook-id> (<regexp> | (<field> <condition> <value>)...)
    lys destroy-listener
+   lys show-listeners
    lys start-listening [-p <port>]
    lys restart-listeners
    lys stop-listening
-   lys grant <public-key>...
    lys show-log
    lys public-ip
+   lys grant <public-key>...
 
 Options:
--w --webhook=<webhook> : the peer registering the webhook
--p --port=<port>       : the port used for listening srv [default: 5001]
+-n --node=<node> : the node registering the webhook
+-p --port=<port> : the port used for listening srv [default: 5001]
 
 Subcommands:
-   deploy-listener   : link a webhook <event> with a python <function>
-   destroy-listener  : unlink webhook <event> from python <function>
-   start-listening   : start/restart listener server
-   restart-listeners : restart listener server
-   stop-listening    : stop listener server
-   grant             : allow remote controle to public key owner
-   show-log          : show server log
-   public-ip         : get public ip
+   deploy-listener    : link a webhook <event> with a python <function>
+   update-listener    : change <event> trigger conditions
+   destroy-listener   : unlink webhook <event> from python <function>
+   lys show-listeners : print a sumary of registered <event>
+   start-listening    : start/restart listener server
+   restart-listeners  : restart listener server
+   stop-listening     : stop listener server
+   show-log           : show server log
+   public-ip          : get public ip
+   grant              : allow remote controle to <public-key> owner
+```
+
+### Examples
+
+**Deploying listener**
+
+Execute `dummy.logSomething` on `transaction.applied` event:
+```bash
+cd ~
+~$ ./lys-venv
+# if vendorField starts with `sc:` using default webhook peer (http://127.0.0.1:4004)
+(venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething ^sc:.*$
+# or
+(venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething vendorField regexp ^sc:.*$
+# if amount >= 25 arks using a custom webhook peer
+(venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 -n http://dpos.arky-delegate.info:4004
+# if amount >= 25 arks or vendorField starting with `sc:` using a custom webhook peer
+(venv) ~$ ./lys deploy-listener transaction.applied dummy.logSomething amount gte 2500000000 vendorField regexp ^sc:.*$ -n http://dpos.arky-delegate.info:4004
+```
+
+**watchdog script**
+
+`watchdog.py` script is available. It needs `.data/notifyWhaleMove.param` configuration file identifying specific wallets:
+
+```json
+{
+    "hot wallets": {
+        "Bittrex": ["AUexKjGtgsSpVzPLs6jNMM6vJ6znEVTQWK"],
+        "Binance": [
+            "AdS7WvzqusoP759qRo6HDmUz2L34u4fMHz",
+            "Aakg29vVhQhJ5nrsAHysTUqkTBVfmgBSXU",
+            "AFrPtEmzu6wdVpa2CnRDEKGQQMWgq8nE9V",
+            "AazoqKvZQ7HKZMQ151qaWFk6nDY1E9faYu"
+        ],
+        "UpBit": [
+            "ANQftoXeWoa9ud9q9dd2ZrUpuKinpdejAJ",
+            "AReY3W6nTv3utiG2em5nefKEsGQeqEVPN4"
+        ],
+        "OKEx": ["AZcK6t1P9Z2ndiYvdVaS7srzYbTn5DHmck"],
+        "Cryptopia": ["AJbmGnDAx9y91MQCDApyaqZhn6fBvYX9iJ"],
+        "ARK Ecosystem": ["AXzxJ8Ts3dQ2bvBR1tPE7GUee9iSEJb8HX"],
+        "ARK Shield": ["AHJJ29sCdR5UNZjdz3BYeDpvvkZCGBjde9"],
+        "ARK": ["ANkHGk5uZqNrKFNY5jtd4A88zzFR3LnJbe"],
+        "ACF": ["AagJoLEnpXYkxYdYkmdDSNMLjjBkLJ6T67"]
+    }
+}
+
+```
+
+## Notification system
+
+4 notification types are available. Notification service is activated if a json configuration file is present in `.data` folder.
+
+**freemobile (french only)**
+
+Notification option must be enabled in your Free mobile account. Then, copy your parameters in `freemobile.json` file:
+```json
+{
+    "user": "12345678", 
+    "pass": "..."
+}
+```
+
+**twilio**
+
+Copy your parameters in `twilio.json` file:
+```json
+{
+    "sid": "...",
+    "auth": "...", 
+    "receiver": "+1234567890", 
+    "sender": "+0987654321"
+}
+```
+
+**Pushover**
+
+Copy your parameters in `pushover.json` file:
+```json
+{
+    "user": "...",
+    "token": "..."
+}
+```
+
+**Pushbullet**
+
+Copy your API token in `pushbullet.json` file:
+```json
+{
+    "token": "..."
+}
 ```

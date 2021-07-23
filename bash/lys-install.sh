@@ -16,7 +16,7 @@ echo
 echo installing system dependencies
 echo ==============================
 sudo apt-get -qq install python3 python3-dev python3-setuptools python3-pip
-sudo apt-get -qq install pypy3
+sudo apt-get -qq install libgmp-dev
 sudo apt-get -qq install virtualenv
 sudo apt-get -qq install nginx
 echo "done"
@@ -57,20 +57,10 @@ if [ -d $VENVDIR ]; then
     esac
 fi
 
-if [ ! -d $VENVDIR ]; then
-    echo -e "select environment:\n  1) python3\n  2) pypy3"
-    read -p "[default:python3]> " n
-    case $n in
-    1) TARGET="$(which python3)";;
-    2) TARGET="$(which pypy3)";;
-    *) TARGET="$(which python3)";;
-    esac
-    mkdir $VENVDIR -p
-    virtualenv -p $TARGET $VENVDIR -q
-fi
+TARGET="$(which python3)"
+virtualenv -p $TARGET $VENVDIR -q
 
 echo "done"
-# if [ $(which pypy3) ]; then echo "OK"; fi
 
 # install python dependencies
 echo
@@ -82,11 +72,11 @@ cd ~/ark-listener
 pip install -r requirements.txt -q
 echo "done"
 
-chmod +x bash/activate
-
 cp bash/lys ~
+cp bash/activate ~/lys-venv
 cd ~
 chmod +x lys
+chmod +x lys-venv
 
 echo
 echo "setup finished"

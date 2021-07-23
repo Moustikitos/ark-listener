@@ -2,96 +2,128 @@
 # © THOORENS Bruno
 
 import os
-import hashlib
-import getpass
 import binascii
-import pySecp256k1 as secp256k1
+import traceback
+import cSecp256k1 as secp256k1
 
-from lystener import rest, getPublicIp
-from secp256k1 import ecdsa, schnorr
+from lystener import rest, loadJson, dumpJson, logMsg
 
-
-PRIVKEY = None
-PUBLIC_IP = rest.GET.plain(
-    peer="https://www.ipecho.net"
-).get("raw", getPublicIp())
+ECDSA = None
 
 
 def link(secret=None):
-    global PRIVKEY
-    if secret is None:
-        secret = getpass.getpass(prompt="Type or paste your secret> ")
-    PRIVKEY = binascii.hexlify(
-        secp256k1.hash_sha256(
-            secret if isinstance(secret, bytes) else secret.encode("utf-8")
-        )
-    )
+    global ECDSA
+    ECDSA = secp256k1.Ecdsa(secret)
 
 
 def unlink():
-    global PRIVKEY
-    PRIVKEY = None
+    global ECDSA
+    ECDSA = None
 
 
-def schnorr_sign(msg, privateKey):
-    msg = hashlib.sha256(msg.encode("utf-8")).digest()
-    return binascii.hexlify(
-        schnorr.sign(msg, binascii.unhexlify(privateKey))
-    )
-
-
-def ecdsa_sign(msg, privateKey):
-    msg = hashlib.sha256(msg.encode("utf-8")).digest()
-    return binascii.hexlify(
-        ecdsa.sign(msg, binascii.unhexlify(privateKey))
-    )
-
-
-def create_header(privateKey, payload, schnorr=False, peer=None):
+def create_header(peer=None):
+    global ECDSA
     salt = binascii.hexlify(os.urandom(32))
     salt = salt.decode("utf-8") if isinstance(salt, bytes) else salt
-
+    msg = salt + rest.GET.salt(peer=peer).get("result", "?")
     return {
         "Salt": salt,
-        "Method": "schnorr" if schnorr else "ecdsa",
-        "Public-Key": binascii.hexlify(
-            secp256k1.encoded_from_point(
-                secp256k1.PublicKey.from_seed(binascii.unhexlify(privateKey))
-            )
-        ),
-        "Signature": (schnorr_sign if schnorr else ecdsa_sign)(
-            PUBLIC_IP + salt + rest.GET.salt(peer=peer).get("salt", "?"),
-            privateKey
-        )
+        "Public-Key": ECDSA.puk().encode().decode("utf-8"),
+        "Signature": ECDSA.sign(msg).der().decode("utf-8")
     }
 
 
 def secp256k1_filter(**kwargs):
-    privateKey = kwargs.pop("privateKey", PRIVKEY)
+    global ECDSA
     headers = kwargs.pop("headers", {"Content-type": "application/json"})
-    schnorr = kwargs.pop("schnorr", False)
-    to_jsonify = kwargs.pop("jsonify", None)
-
     peer = kwargs.get("peer", None)
-    if privateKey is not None:
-        if to_jsonify is not None:
-            headers.update(
-                **create_header(privateKey, to_jsonify, schnorr, peer)
-            )
-        else:
-            headers.update(
-                **create_header(privateKey, kwargs, schnorr, peer)
-            )
+    if ECDSA is not None:
+        headers.update(**create_header(peer))
         kwargs["headers"] = headers
-
     return kwargs
 
 
-PUT = rest.EndPoint(
+POST = rest.req.EndPoint(
     method=lambda *a, **kw:
-        rest.EndPoint._call("PUT", *a, **secp256k1_filter(**kw))
+        rest.req.EndPoint._call("POST", *a, **secp256k1_filter(**kw))
 )
-DELETE = rest.EndPoint(
+PUT = rest.req.EndPoint(
     method=lambda *a, **kw:
-        rest.EndPoint._call("DELETE", *a, **secp256k1_filter(**kw))
+        rest.req.EndPoint._call("PUT", *a, **secp256k1_filter(**kw))
 )
+DELETE = rest.req.EndPoint(
+    method=lambda *a, **kw:
+        rest.req.EndPoint._call("DELETE", *a, **secp256k1_filter(**kw))
+)
+
+
+def deploy_listener(args={}, **options):
+    """
+    link blockchain event to a python function.
+    """
+
+    function = args.get("<function>", options.get("function", ""))
+    regexp = args.get("<regexp>", options.get("regexp", None))
+    event = args.get("<event>", options.get("event", "null"))
+
+    target_url = \
+        ("%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) + \
+        "/" + function.replace(".", "/")
+
+    # compute listener condition
+    # if only a regexp is givent compute condition on vendorField
+    if regexp is not None:
+        conditions = [{
+            "key": "vendorField",
+            "condition": "regexp",
+            "value": regexp
+        }]
+    # else create a condition.
+    # Ark webhook api will manage condition errors
+    else:
+        conditions = list(
+            {"key": k, "condition": c, "value": v} for k, c, v in zip(
+                args.get("<field>", options.get("field", [])),
+                args.get("<condition>", options.get("condition", [])),
+                args.get("<value>", options.get("value", []))
+            )
+        )
+
+    # check if remotly called
+    remotly = options.get("remote", False)
+    if remotly:
+        _POST = POST
+        target_peer = options.get("peer", "http://127.0.0.1")
+        link()
+    else:
+        _POST = rest.POST
+        target_peer = options.get("node", rest.req.EndPoint.peer)
+
+    # create the webhook
+    req = _POST.api.webhooks(
+        event=event,
+        peer=target_peer,
+        target=target_url,
+        conditions=conditions
+    )
+
+    # parse request result if no error messages
+    try:
+        if req.get("status", req.get("statusCode", 500)) < 300:
+            webhook = req["data"]
+            security_token = webhook["token"]
+            # manage token
+            token_db = loadJson("token")
+            token_db[webhook["id"]] = security_token
+            webhook["token"] = security_token[32:]
+            dumpJson(token_db, "token")
+            # save the used peer to be able to delete it later
+            webhook["peer"] = target_peer
+            # save webhook configuration in JSON folder
+            dumpJson(webhook, security_token[:32] + ".json")
+            logMsg("%s webhook set" % function)
+        else:
+            logMsg("%s webhook not set:\n%r" % (function, req))
+    except Exception as error:
+        logMsg("%s" % req)
+        logMsg("%r\n%s" % (error, traceback.format_exc()))

@@ -3,7 +3,7 @@
 
 import base64
 import lystener
-from lystener import loadJson, rest
+from lystener import loadJson, rest, task
 
 
 def freemobile_sendmsg(title, body):
@@ -74,10 +74,9 @@ def send(title, body):
     ]:
         response = func(title, body)
         if isinstance(response, dict):
-            lystener.logMsg("notification response:\n%s" % response)
             if response.get("status", 1000) < 300:
+                task.MessageLogger.log(
+                    "%s notice:\n[%s]\n%s" % (func, title, body)
+                )
                 return response
-
-
-# slack notification
-# https://api.slack.com/methods/chat.postMessage
+    return {"msg": "nothing seems to be sent correctly"}
