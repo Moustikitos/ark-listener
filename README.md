@@ -28,7 +28,7 @@ If found, `module.function` will be executed with data embeded in the POST reque
 Any peace of python code found in `lystener.__path__` can be triggered. 
 `lystener` package provides a `plugins` folder where custom code to execute can be stored. If another place is needed, simply add the path to the `package.pth` file.
 
-Python script environnement can be set using docstring. Requirements are checked and installed if missing with `./lys start-listening` or `./lys restart-listeners` commands.
+Python script environnement can be set using docstring. Environnement is checked and installed if needed with `./lys start-listening` or `./lys restart-listeners` commands.
 
 Here is an example of script (`module.py`):
 ```python
@@ -50,6 +50,7 @@ echo "Simple script ready !"
 import sys
 import pytz
 from datetime import datetime as time
+from lystener import notify
 
 
 def function(data):
@@ -61,6 +62,7 @@ def function(data):
       "%s: %r" % (pytz.timezone('US/Eastern').localize(time.now()), data)
    )
    sys.stdout.flush()
+   notify.send("[Data received]:", "%r" % data)
    return {"success": True}
 ```
 
@@ -78,7 +80,7 @@ Listener server ip have to be white-listed by blockchain node (see `./lys public
 First read [`ARK doc`](https://ark.dev/docs/api/webhook-api/endpoints) about webhook endpoints.
 
 Activate `lys` virtual environnement:
-```
+```sh
 ~$ ./lys-venv
 (venv) ~$
 ```
@@ -113,6 +115,19 @@ Subcommands:
    show-log          : show server log
    public-ip         : get public ip
    grant             : allow remote controle to <public-key> owner
+```
+
+For the very first start:
+```sh
+(venv) ~$ ./lys start-listening
+```
+
+A linux service (named `lys.service`) will then run as a background task managed by `systemctl`.
+
+`lys` service can be launched on system start:
+
+```sh
+sudo systemctl enable lys.service
 ```
 
 ### Examples
@@ -162,7 +177,13 @@ cd ~
 
 ```
 
-## Notification system
+## Notifications
+
+```python
+from lystener import notify
+
+notify.send("Title", "Message body...")
+```
 
 4 notification types are available. Notification service is activated if a json configuration file is present in `.data` folder.
 
