@@ -103,6 +103,7 @@ venv.bak/
 /site
 
 # mypy
+*.xcf
 .mypy_cache/
 lystener/peer.json
 lystener/_plugins
