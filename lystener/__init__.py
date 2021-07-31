@@ -19,7 +19,7 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 JSON = os.path.abspath(os.path.join(ROOT, ".json"))
 DATA = os.path.abspath(os.path.join(ROOT, ".data"))
 LOG = os.path.abspath(os.path.join(ROOT, ".log"))
-#
+# UNUSED:
 VALID_URL = re.compile(
     r'^https?://'  # http:// or https://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
@@ -39,6 +39,7 @@ pathfile = os.path.join(ROOT, "package.pth")
 if os.path.exists(pathfile):
     with io.open(pathfile) as pathes:
         comment = re.compile(r"^[\s]*#.*")
+        # for all line that is not a comment
         for path in [
             p.strip() for p in pathes.read().split("\n")
             if not comment.match(p)
@@ -51,17 +52,22 @@ def checkPluginDependencies():
     """
     Walk trought all plugins and install dependencies according to docstrings
     """
+    # check all file that are not in package base path
     for path in [p for p in __path__[1:] if os.path.exists(p)]:
         for name in [os.path.join(path, name) for name in os.listdir(path)]:
+            # if it is a python module
             if os.path.isfile(name) and \
                (name.endswith(".py") or name.endswith(".pyw")):
                 logMsg(
                     "%s - %s" % (path, os.path.basename(name.split(".")[0]))
                 )
                 with open(name, "r" if PY3 else "rb") as f:
+                    # parse module strcture to extract docstring
                     tree = ast.parse(f.read())
                     docstring = ast.get_docstring(tree)
                     if docstring is not None:
+                        # open doncstring as inifile allowing no values and ~
+                        # as key pair delimiters
                         cfg = configparser.ConfigParser(
                             allow_no_value=True,
                             delimiters="~"
@@ -132,6 +138,7 @@ def dumpJson(data, name, folder=None):
     #
 
 
+# TODO: use logging module...
 def logMsg(msg, logname=None, dated=False):
     if logname:
         logfile = os.path.join(LOG, logname)
