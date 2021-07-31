@@ -230,7 +230,7 @@ def edit_listener(_id, **kwargs):
 
 
 # send PUT request to edit a webhook
-@srv.bind("/edit/<str:_id>", methods=["PUT"])
+@srv.bind("/update/<str:_id>", methods=["PUT"])
 def edit_listener(_id, **kwargs):
     chk = checkRemoteAuth(**kwargs)
     if chk.get("status", 0) >= 300:
