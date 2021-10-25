@@ -3,8 +3,10 @@
 
 import os
 import io
+import re
 import sys
 import time
+import signal
 import hashlib
 import binascii
 import lystener
@@ -12,7 +14,7 @@ import traceback
 
 import cSecp256k1 as secp256k1
 from usrv import srv
-from lystener import task, rest
+from lystener import loadJson, logMsg, task  #, rest
 
 DAEMONS = None
 CURSOR = None
@@ -139,10 +141,17 @@ def checkRemoteAuth(**args):
 class WebhookApp(srv.MicroJsonApp):
 
     def __init__(self, host="127.0.0.1", port=5000, loglevel=20):
-        global CURSOR
+        global CURSOR, DAEMONS
         srv.MicroJsonApp.__init__(self, host, port, loglevel)
         if CURSOR is None:
             CURSOR = task.initDB()
+        DAEMONS = [
+            task.TaskChecker(),
+            task.TaskExecutioner(),
+            task.MessageLogger(),
+            task.FunctionCaller()
+        ]
+        signal.signal(signal.SIGTERM, task.killall)
 
 
 # Bindings
@@ -192,55 +201,78 @@ def pin():
 @srv.bind("/<str:mod>/<str:func>", methods=["POST"])
 def catch(mod, func, **kwargs):
     "Create a new job and return simple message."
-    task.TaskChecker.JOB.put([mod, func, kwargs])
-    task.MessageLogger.log("%r" % kwargs)
-    return {
-        "status": 200,
-        "msg": "task set: %s.%s(%s)" %
-        (mod, func, kwargs.get("data", {}))
-    }
+    body = kwargs.get("data", {})
+    auth = kwargs.get("headers", {}).get("authorization", "")
+    # try to save fingerprint, fails if fingerprint already exists else accept
+    # and send data to TaskChecker
+    try:
+        webhook_name = task.webhookName(auth, mod, func)
+        token = loadJson(webhook_name)["token"]
+        content = body.get("data", {})
+        task.trace(CURSOR, token, content)
+    except KeyError as error:
+        logMsg("%r" % error)
+        msg = {
+            "status": 404,
+            "msg": "no listener for %s.%s" % (mod, func)
+        }
+    except task.sqlite3.IntegrityError as error:
+        logMsg("%r" % error)
+        msg = {
+            "status": 409,
+            "msg": "data already parsed"
+        }
+    else:
+        task.TaskChecker.JOB.put([mod, func, auth, content])
+        msg = {
+            "status": 200,
+            "msg": "task set: %s.%s(%s)" % (mod, func, content)
+        }
+    finally:
+        CURSOR.commit()
+    return msg
 
 
-# send POST request to create a webhook
-@srv.bind("/deploy", methods=["POST"])
-def deploy_listener(**kwargs):
-    chk = checkRemoteAuth(**kwargs)
-    if chk.get("status", 0) >= 300:
-        return chk
-    task.FunctionCaller.call(
-        rest.POST.api.webhooks,
-        peer=rest.req.EndPoint.peer,
-        **kwargs.get("data", {})
-    )
-    return {"status": 200, "msg": "webhook POST request successfully posted"}
+# # send POST request to create a webhook
+# @srv.bind("/deploy", methods=["POST"])
+# def deploy_listener(**kwargs):
+#     chk = checkRemoteAuth(**kwargs)
+#     if chk.get("status", 0) >= 300:
+#         return chk
+#     task.FunctionCaller.call(
+#         rest.POST.api.webhooks,
+#         peer=rest.req.EndPoint.peer,
+#         **kwargs.get("data", {})
+#     )
+#     return {"status": 200, "msg": "webhook POST request successfully posted"}
 
 
-# send DELETE request to edit a webhook
-@srv.bind("/destroy/<str:_id>", methods=["DELETE"])
-def edit_listener(_id, **kwargs):
-    chk = checkRemoteAuth(**kwargs)
-    if chk.get("status", 0) >= 300:
-        return chk
-    task.FunctionCaller.call(
-        rest.DELETE.api.webhooks, _id,
-        peer=rest.req.EndPoint.peer,
-        **kwargs.get("data", {})
-    )
-    return {"status": 200, "msg": "webhook DELETE request successfully posted"}
+# # send DELETE request to delete a webhook
+# @srv.bind("/destroy/<str:_id>", methods=["DELETE"])
+# def destroy_listener(_id, **kwargs):
+#     chk = checkRemoteAuth(**kwargs)
+#     if chk.get("status", 0) >= 300:
+#         return chk
+#     task.FunctionCaller.call(
+#         rest.DELETE.api.webhooks, _id,
+#         peer=rest.req.EndPoint.peer,
+#         **kwargs.get("data", {})
+#     )
+#     return {"status": 200, "msg": "webhook DELETE request successfully posted"}
 
 
-# send PUT request to edit a webhook
-@srv.bind("/update/<str:_id>", methods=["PUT"])
-def edit_listener(_id, **kwargs):
-    chk = checkRemoteAuth(**kwargs)
-    if chk.get("status", 0) >= 300:
-        return chk
-    task.FunctionCaller.call(
-        rest.PUT.api.webhooks, _id,
-        peer=rest.req.EndPoint.peer,
-        **kwargs.get("data", {})
-    )
-    return {"status": 200, "msg": "webhook PUT request successfully posted"}
+# # send PUT request to update a webhook
+# @srv.bind("/update/<str:_id>", methods=["PUT"])
+# def update_listener(_id, **kwargs):
+#     chk = checkRemoteAuth(**kwargs)
+#     if chk.get("status", 0) >= 300:
+#         return chk
+#     task.FunctionCaller.call(
+#         rest.PUT.api.webhooks, _id,
+#         peer=rest.req.EndPoint.peer,
+#         **kwargs.get("data", {})
+#     )
+#     return {"status": 200, "msg": "webhook PUT request successfully posted"}
 
 
 # for test purpose only
@@ -272,12 +304,4 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
     app = WebhookApp(options.host, options.port, loglevel=options.loglevel)
-
-    if DAEMONS is None:
-        DAEMONS = [
-            task.TaskChecker(),
-            task.TaskExecutioner(),
-            task.MessageLogger(),
-            task.FunctionCaller()
-        ]
     app.run(ssl=options.ssl)

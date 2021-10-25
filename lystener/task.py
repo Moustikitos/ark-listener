@@ -11,7 +11,7 @@ import traceback
 import threading
 import importlib
 
-from lystener import logMsg, loadJson, DATA
+from lystener import logMsg, loadJson, DATA, JSON
 
 
 def initDB():
@@ -22,11 +22,11 @@ def initDB():
     cursor = sqlite.cursor()
     cursor.execute(
         "CREATE TABLE IF NOT EXISTS "
-        "history(signature TEXT, authorization TEXT);"
+        "fingerprint(hash TEXT UNIQUE, token TEXT);"
     )
     cursor.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS "
-        "history_index ON history(signature);"
+        "CREATE TABLE IF NOT EXISTS "
+        "history(signature TEXT UNIQUE, token TEXT);"
     )
     sqlite.row_factory = sqlite3.Row
     sqlite.commit()
@@ -34,7 +34,62 @@ def initDB():
 
 
 def vacuumDB():
-    pass
+    sqlite = sqlite3.connect(
+        os.path.join(DATA, "database.db"),
+        isolation_level=None
+    )
+    sqlite.row_factory = sqlite3.Row
+
+    token = [
+        row["token"] for row in
+        sqlite.execute(
+            "SELECT DISTINCT token FROM history"
+        ).fetchall()
+    ]
+
+    for tok in [
+        loadJson(name).get("token", None) for name in os.listdir(JSON)
+        if name.endswith(".json")
+    ]:
+        if tok not in token:
+            cleanDB(sqlite, tok)
+
+    sqlite.execute("VACUUM")
+    sqlite.commit()
+    sqlite.close()
+
+
+def cleanDB(sqlite, token):
+    logMsg("removing hitory of token %s..." % token)
+    sqlite.execute("DELETE FROM fingerprint WHERE token=?", (token,))
+    sqlite.execute("DELETE FROM history WHERE token=?", (token,))
+
+
+def trace(sqlite, token, content):
+    sqlite.execute(
+        "INSERT INTO fingerprint(hash, token) VALUES(?, ?);",
+        (jsonHash(content), token)
+    )
+
+
+def untrace(sqlite, token, content):
+    sqlite.execute(
+        "DELETE FROM fingerprint WHERE hash=? AND token=?",
+        (jsonHash(content), token)
+    )
+
+
+def webhookName(auth, mod, func):
+    return "%s.json" % hashlib.sha256(
+        f"whk://{auth}.{mod}.{func}".encode("utf-8")
+    ).hexdigest()
+
+
+def isGenuineWebhook(auth, webhhook={}):
+    token = auth + webhhook.get("token", "")
+    return hashlib.sha256(
+        token.encode("utf-8")
+    ).hexdigest() == webhhook.get("hash", "")
 
 
 def jsonHash(data):
@@ -79,7 +134,6 @@ def setInterval(interval):
 
 
 class Task(threading.Thread):
-
     STOP = threading.Event()
     LOCK = threading.Lock()
 
@@ -93,6 +147,7 @@ class MessageLogger(Task):
     JOB = queue.Queue()
 
     def run(self):
+        logMsg("MessageLogger is running in background...")
         while not Task.STOP.is_set():
             msg = MessageLogger.JOB.get()
             try:
@@ -103,6 +158,7 @@ class MessageLogger(Task):
                       (exception, traceback.format_exc())
             finally:
                 Task.LOCK.release()
+        logMsg("exiting MessageLogger...")
 
     @staticmethod
     def log(msg):
@@ -113,6 +169,7 @@ class FunctionCaller(Task):
     JOB = queue.Queue()
 
     def run(self):
+        logMsg("FunctionCaller is running in background...")
         while not Task.STOP.is_set():
             func, args, kwargs = FunctionCaller.JOB.get()
             try:
@@ -127,6 +184,7 @@ class FunctionCaller(Task):
                 Task.LOCK.release()
             # push msg
             MessageLogger.JOB.put(msg)
+        logMsg("exiting FunctionCaller...")
 
     @staticmethod
     def call(func, *args, **kwargs):
@@ -140,47 +198,29 @@ class TaskChecker(Task):
     def run(self):
         # sqlite db opened within thread
         TaskChecker.DB = initDB()
+        logMsg("TaskChecker is running in background...")
         # run until Task.killall() called
         while not Task.STOP.is_set():
             skip = True
             # wait until a job is given
-            module, name, data = TaskChecker.JOB.get()
-            headers = data.get("headers", {})
-            body = data.get("data", {})
-            content = body.get("data", {})
-            # get authorization from headers
-            auth = headers.get("authorization", "")
-            # recreate the security token and check if authorized
-            webhook = loadJson("%s.json" % auth)
-            token = auth + webhook.get("token", "")
-            if loadJson("token").get(webhook.get("id", ""), False) != token:
-                msg = "not authorized here\n%s" % json.dumps(data, indent=2)
+            module, name, auth, content = TaskChecker.JOB.get()
+            # get webhook data
+            webhook = loadJson(webhookName(auth, module, name))
+            # compute security hash
+            if not isGenuineWebhook(auth, webhook):
+                msg = "not authorized here\n%s" % json.dumps(content, indent=2)
             else:
                 # build a signature
                 signature = "%s@%s.%s[%s]" % (
-                    webhook["event"], module, name, jsonHash(content))
-                # ATOMIC ACTION -----------------------------------------------
-                Task.LOCK.acquire()
-                # check if signature already in database
-                req = TaskChecker.DB.execute(
-                    "SELECT count(*) FROM history WHERE signature = ?",
-                    (signature,)
+                    webhook["event"], module, name, jsonHash(content)
                 )
-                # exit if signature found in database
-                if req.fetchone()[0] != 0:
-                    msg = "data already parsed"
-                elif signature in TaskExecutioner.ONGOING:
-                    msg = "data is being parsed"
-                else:
-                    TaskExecutioner.ONGOING.add(signature)
-                    skip = False
-                Task.LOCK.release()
-                # END ATOMIC ACTION -------------------------------------------
+                skip = False
             if not skip:
                 # import asked module
                 try:
                     obj = importlib.import_module("lystener." + module)
                 except Exception as exception:
+                    skip = True
                     msg = "%r\ncan not import python module %s" % \
                         (exception, module)
                 else:
@@ -193,25 +233,34 @@ class TaskChecker(Task):
                         )
                         msg = "forwarded: " + signature
                     else:
+                        skip = True
                         msg = "python definition %s not found in %s or is " \
                               "not callable" % (name, module)
+            if skip and "token" in webhook:
+                Task.LOCK.acquire()
+                # ATOMIC ACTION -----------------------------------------------
+                untrace(TaskChecker.DB, webhook["token"], content)
+                TaskChecker.DB.commit()
+                # END ATOMIC ACTION -------------------------------------------
+                Task.LOCK.release()
             # push msg
             MessageLogger.JOB.put(msg)
+        logMsg("exiting TaskChecker...")
 
 
 class TaskExecutioner(Task):
     JOB = queue.Queue()
     MODULES = set([])
-    ONGOING = set([])
     DB = None
 
     def run(self):
+        logMsg("TaskExecutioner is running in background...")
         TaskExecutioner.DB = initDB()
         while not Task.STOP.is_set():
             error = True
             response = {}
             # wait until a job is given
-            func, data, auth, sig = TaskExecutioner.JOB.get()
+            func, data, token, sig = TaskExecutioner.JOB.get()
             try:
                 response = func(data)
             except Exception as exception:
@@ -220,52 +269,47 @@ class TaskExecutioner(Task):
             else:
                 error = False
                 msg = "%s response:\n%s" % (func, response)
-
             # push msg
             MessageLogger.JOB.put(msg)
-
             # daemon waits here to log results, update database and clean
             # memory
             try:
-                # ATOMIC ACTION -----------------------------------------------
                 Task.LOCK.acquire()
-
+                # ATOMIC ACTION -----------------------------------------------
                 if not error and response.get("success", False):
                     TaskExecutioner.DB.execute(
-                        "INSERT OR REPLACE INTO "
-                        "history(signature, authorization) "
-                        "VALUES(?,?);", (sig, auth)
+                        "INSERT OR REPLACE INTO history(signature, token) "
+                        "VALUES(?, ?);", (sig, token)
                     )
-                    TaskExecutioner.DB.commit()
-
                 # remove the module if all jobs done so if code is modified it
                 # will be updated without a listener restart
                 if TaskExecutioner.JOB.empty():
-                    TaskExecutioner.ONGOING.clear()
-                    error = False
-                    while not error:
+                    empty = False
+                    while not empty:
                         try:
                             obj = TaskExecutioner.MODULES.pop()
                         except Exception:
-                            error = True
+                            empty = True
                         else:
                             sys.modules.pop(obj.__name__, False)
                             del obj
-
-            except Exception as error:
+            except Exception as exception:
                 MessageLogger.JOB.put(
                     "Internal error occured:\n%s\n%s" %
-                    ("%r" % error, traceback.format_exc())
+                    ("%r" % exception, traceback.format_exc())
                 )
-
             finally:
-                Task.LOCK.release()
+                if error:
+                    untrace(TaskExecutioner.DB, token, data)
+                TaskExecutioner.DB.commit()
                 # END ATOMIC ACTION -------------------------------------------
+                Task.LOCK.release()
+        logMsg("exiting TaskExecutioner...")
 
 
 def killall():
     Task.STOP.set()
     MessageLogger.JOB.put("kill signal sent !")
     FunctionCaller.JOB.put([lambda n: n, {"Exit": True}, {}])
-    TaskChecker.JOB.put(["", "", {}])
+    TaskChecker.JOB.put(["", "", "?", {}])
     TaskExecutioner.JOB.put([lambda n: n, {"success": False}, "", ""])

@@ -2,11 +2,12 @@
 # © THOORENS Bruno
 
 import os
+import hashlib
 import binascii
 import traceback
 import cSecp256k1 as secp256k1
 
-from lystener import rest, loadJson, dumpJson, logMsg
+from lystener import task, rest, dumpJson, logMsg
 
 ECDSA = None
 
@@ -67,7 +68,7 @@ def deploy_listener(args={}, **options):
     event = args.get("<event>", options.get("event", "null"))
 
     target_url = \
-        ("%(scheme)s://%(ip)s:%(port)s" % rest.LISTENER_PEER) + \
+        ("%(scheme)s://%(ip)s%(port)s" % rest.LISTENER_PEER) + \
         "/" + function.replace(".", "/")
 
     # compute listener condition
@@ -97,7 +98,9 @@ def deploy_listener(args={}, **options):
         link()
     else:
         _POST = rest.POST
-        target_peer = options.get("node", rest.req.EndPoint.peer)
+        target_peer = args.get(
+            "<node>", options.get("node", rest.req.EndPoint.peer)
+        )
 
     # create the webhook
     req = _POST.api.webhooks(
@@ -111,16 +114,21 @@ def deploy_listener(args={}, **options):
     try:
         if req.get("status", req.get("statusCode", 500)) < 300:
             webhook = req["data"]
-            security_token = webhook["token"]
-            # manage token
-            token_db = loadJson("token")
-            token_db[webhook["id"]] = security_token
-            webhook["token"] = security_token[32:]
-            dumpJson(token_db, "token")
             # save the used peer to be able to delete it later
             webhook["peer"] = target_peer
-            # save webhook configuration in JSON folder
-            dumpJson(webhook, security_token[:32] + ".json")
+            # build the security hash and keep only second token part
+            webhook["hash"] = hashlib.sha256(
+                webhook["token"].encode("utf-8")
+            ).hexdigest()
+            # create a unique name based on first token part and module.name
+            # so when a content is received, authorisation in POST header can
+            # be used with module and name mentioned in the url
+            webhook_name = task.webhookName(
+                webhook["token"][:32], *function.split(".")
+            )
+            logMsg("token: %s" % webhook["token"])
+            webhook["token"] = webhook["token"][32:]
+            dumpJson(webhook, webhook_name)
             logMsg("%s webhook set" % function)
         else:
             logMsg("%s webhook not set:\n%r" % (function, req))
