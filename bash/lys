@@ -17,20 +17,20 @@ Usage:
    lys grant <public-key>...
 
 Options:
--n --node=<node> : the node registering the webhook
--p --port=<port> : the port used for listening srv [default: 5001]
+-n --node=<node>  the node registering the webhook
+-p --port=<port>  the port used for listening srv [default: 5001]
 
 Subcommands:
-   deploy-listener   : link a webhook <event> with a python <function>
-   update-listener   : change <event> trigger conditions
-   destroy-listener  : unlink webhook <event> from python <function>
-   show-listeners    : print a sumary of registered <event>
-   start-listening   : start/restart listener server
-   restart-listeners : restart listener server
-   stop-listening    : stop listener server
-   show-log          : show server log
-   public-ip         : get public ip
-   grant             : allow remote controle to <public-key> owner
+   deploy-listener    link a webhook <event> with a python <function>
+   update-listener    change <event> trigger conditions
+   destroy-listener   unlink webhook <event> from python <function>
+   show-listeners     print a sumary of registered <event>
+   start-listening    start/restart listener server
+   restart-listeners  restart listener server
+   stop-listening     stop listener server
+   show-log           show server log
+   public-ip          get public ip
+   grant              allow remote controle to <public-key> owner
 """
 
 import os
@@ -38,6 +38,8 @@ import sys
 import docopt
 import binascii
 import traceback
+
+from lystener.task import initDB, cleanDB
 
 # add git installation
 sys.path.append(os.path.abspath(os.path.expanduser("~/ark-listener")))
@@ -92,7 +94,7 @@ def grant(args={}, **options):
             secp256k1.point_from_encoded(binascii.unhexlify(elem))
         except Exception:
             wallet = rest.GET.api.wallets(
-                elem, peer="https://explorer.ark.io:8443"
+                elem, peer="https://api.ark.io"
             ).get("data", {})
             puk = wallet.get("publicKey", None)
             if puk is not None:
@@ -187,23 +189,20 @@ def destroy_listener(args={}, **options):
 
     # load webhook configuration
     webhook = lystener.loadJson(json_name)
-    # condition bellow checks if webhook configurations is found
     try:
+        # condition bellow checks if webhook configurations is found
         if webhook.get("peer", False):
             # delete webhook using its id and parent peer
             req = rest.DELETE.api.webhooks(
                 webhook["id"], peer=webhook["peer"]
             )
-            # delete the webhook configuration
-            os.remove(os.path.join(lystener.JSON, json_name))
-            # remove token from db
-            token_db = lystener.loadJson("token")
-            token_db.pop(webhook["id"], False)
-            lystener.dumpJson(token_db, "token")
             if req.get("status", 500) < 300:
                 lystener.logMsg("%s webhook destroyed" % id_)
             else:
                 lystener.logMsg("%s webhook not destroyed:\n%r" % (id_, req))
+            # delete the webhook configuration
+            cleanDB(initDB(), webhook.get("token", "?"))
+            os.remove(os.path.join(lystener.JSON, json_name))
         else:
             lystener.logMsg("%s webhook not found" % id_)
     except Exception as error:
