@@ -270,7 +270,7 @@ class TaskExecutioner(Task):
                 # dump data and message to manage it later
                 dumpJson(
                     dict(data=data, msg=msg),
-                    "%s.json" % datetime.datetime.now().strftime(
+                    "%s.nfo" % datetime.datetime.now().strftime(
                         "%m-%d-%Y_%Hh%Mm%Ss"
                     )
                 )
