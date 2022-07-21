@@ -7,11 +7,12 @@ import json
 import queue
 import sqlite3
 import hashlib
+import datetime
 import traceback
 import threading
 import importlib
 
-from lystener import logMsg, loadJson, DATA, JSON
+from lystener import dumpJson, logMsg, loadJson, DATA, JSON
 
 
 def initDB():
@@ -266,6 +267,13 @@ class TaskExecutioner(Task):
             except Exception as exception:
                 msg = "%s response:\n%s\n%s" % \
                       (func, "%r" % exception, traceback.format_exc())
+                # dump data and message to manage it later
+                dumpJson(
+                    dict(data=data, msg=msg),
+                    "%s.json" % datetime.datetime.now().strftime(
+                        "%m-%d-%Y_%Hh%Mm%Ss"
+                    )
+                )
             else:
                 error = False
                 msg = "%s response:\n%s" % (func, response)
@@ -305,11 +313,3 @@ class TaskExecutioner(Task):
                 # END ATOMIC ACTION -------------------------------------------
                 Task.LOCK.release()
         logMsg("exiting TaskExecutioner...")
-
-
-def killall():
-    Task.STOP.set()
-    MessageLogger.JOB.put("kill signal sent !")
-    FunctionCaller.JOB.put([lambda n: n, {"Exit": True}, {}])
-    TaskChecker.JOB.put(["", "", "?", {}])
-    TaskExecutioner.JOB.put([lambda n: n, {"success": False}, "", ""])
