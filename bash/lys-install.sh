@@ -46,7 +46,7 @@ echo "done"
 
 echo
 echo creating virtual environment
-echo =============================
+echo ============================
 
 if [ -d $VENVDIR ]; then
     read -p "remove previous virtual environement ? [y/N]> " r
