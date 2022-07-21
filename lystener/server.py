@@ -3,7 +3,6 @@
 
 import os
 import io
-import re
 import sys
 import time
 import signal
@@ -14,9 +13,9 @@ import traceback
 
 import cSecp256k1 as secp256k1
 from usrv import srv
-from lystener import loadJson, logMsg, task  #, rest
+from lystener import loadJson, logMsg, task  # , rest
 
-DAEMONS = None
+DAEMONS = []
 CURSOR = None
 SALT = os.path.join(lystener.JSON, "salt")
 
@@ -74,8 +73,9 @@ WantedBy=multi-user.target
 
 # seed service
 def startSeed():
+    global DAEMONS
     dumpSeed()
-    task.setInterval(16)(dumpSeed)()
+    DAEMONS.append(task.setInterval(16)(dumpSeed)())
 
 
 def dumpSeed():
@@ -141,18 +141,26 @@ def checkRemoteAuth(**args):
 class WebhookApp(srv.MicroJsonApp):
 
     def __init__(self, host="127.0.0.1", port=5000, loglevel=20):
-        global CURSOR, DAEMONS
+        global CURSOR
         srv.MicroJsonApp.__init__(self, host, port, loglevel)
         if CURSOR is None:
             CURSOR = task.initDB()
-        DAEMONS = [
-            task.TaskChecker(),
-            task.TaskExecutioner(),
-            task.MessageLogger(),
-            task.FunctionCaller()
-        ]
-        signal.signal(signal.SIGTERM, task.killall)
+        task.TaskChecker(),
+        task.TaskExecutioner(),
+        task.MessageLogger(),
+        task.FunctionCaller()
+        signal.signal(signal.SIGTERM, self.killall)
 
+    @staticmethod
+    def killall(*args, **kwargs):
+        global DAEMONS
+        for event in DAEMONS:
+            event.set()
+        task.Task.STOP.set()
+        task.MessageLogger.JOB.put("kill signal sent !")
+        task.FunctionCaller.JOB.put([lambda n: n, {"Exit": True}, {}])
+        task.TaskChecker.JOB.put(["", "", "?", {}])
+        task.TaskExecutioner.JOB.put([lambda n: n, {"success": False}, "", ""])
 
 # Bindings
 # --------
@@ -170,8 +178,8 @@ def index():
 
     counts = dict(
         CURSOR.execute(
-            "SELECT authorization, count(*) "
-            "FROM history GROUP BY authorization"
+            "SELECT token, count(*) "
+            "FROM history GROUP BY token"
         ).fetchall()
     )
 
