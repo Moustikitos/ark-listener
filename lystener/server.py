@@ -138,11 +138,11 @@ def checkRemoteAuth(**args):
         }
 
 
-class WebhookApp(srv.MicroJsonApp):
+class WebhookApp(srv.uJsonApp):
 
     def __init__(self, host="127.0.0.1", port=5000, loglevel=20):
         global CURSOR
-        srv.MicroJsonApp.__init__(self, host, port, loglevel)
+        srv.uJsonApp.__init__(self, host, port, loglevel)
         if CURSOR is None:
             CURSOR = task.initDB()
         task.TaskChecker(),
