@@ -3,4 +3,4 @@ docopt
 future
 configparser
 git+https://github.com/Moustikitos/fast-curve@1.1.1#egg=cSecp256k1
-git+https://github.com/Moustikitos/micro-server@0.2.1#egg=usrv
+git+https://github.com/Moustikitos/micro-server@0.3.1#egg=usrv
