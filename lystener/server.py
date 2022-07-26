@@ -4,6 +4,7 @@
 import os
 import io
 import sys
+import json
 import time
 import signal
 import hashlib
@@ -210,6 +211,8 @@ def pin():
 def catch(mod, func, **kwargs):
     "Create a new job and return simple message."
     body = kwargs.get("data", {})
+    if isinstance(body, str):
+        body = json.loads(body)
     auth = kwargs.get("headers", {}).get("authorization", "")
     # try to save fingerprint, fails if fingerprint already exists else accept
     # and send data to TaskChecker
@@ -229,6 +232,12 @@ def catch(mod, func, **kwargs):
         msg = {
             "status": 409,
             "msg": "data already parsed"
+        }
+    except Exception as error:
+        logMsg("%r" % error)
+        msg = {
+            "status": 500,
+            "msg": "execution Error"
         }
     else:
         task.TaskChecker.JOB.put([mod, func, auth, content])
